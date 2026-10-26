@@ -16,18 +16,18 @@ export class AuthService {
     this.#tokenProvider = tokenProvider;
   }
 
-  async signUp({ email, passwordHash, nickname }) {
+  async signUp({ email, password, name }) {
     const existingUser = await this.#userRepository.findByEmail(email);
     if (existingUser) {
       throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
     }
 
-    const hashedPassword = await this.#passwordProvider.hash(passwordHash);
+    const hashedPassword = await this.#passwordProvider.hash(password);
 
     const user = await this.#userRepository.create({
       email,
       password: hashedPassword,
-      nickname,
+      name,
     });
 
     const tokens = this.#tokenProvider.generateTokens(user);
@@ -40,13 +40,13 @@ export class AuthService {
       includePassword: true,
     });
 
-    if (!authUser) {
+    if (!authUser?.passwordHash) {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);
     }
 
     const isPasswordValid = await this.#passwordProvider.compare(
       password,
-      authUser.password,
+      authUser.passwordHash,
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);

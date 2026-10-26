@@ -4,6 +4,11 @@ enum UserRole {
   ADMIN
 }
 
+enum UserGrade {
+  EXPERT
+  NORMAL
+}
+
 enum AuthProvider {
   LOCAL
   GOOGLE
@@ -49,7 +54,7 @@ model User {
   nickname          String?                    @unique
   passwordHash      String?
   role              UserRole                   @default(USER)
-  grade             String
+  grade             UserGrade                  @default(NORMAL)
   provider          AuthProvider               @default(LOCAL)
   providerId        String?
 
