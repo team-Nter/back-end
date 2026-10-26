@@ -26,6 +26,10 @@ export class App {
     this.app.use(errorHandler);
   }
 
+  routes(controller) {
+    this.app.use('/api', controller.router);
+  }
+
   listen(port) {
     return new Promise((resolve, reject) => {
       const server = this.app.listen(port);

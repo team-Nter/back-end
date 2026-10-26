@@ -2,7 +2,12 @@ import { config } from '#config';
 import { db } from '#prisma/db.js';
 import { UserRepository } from '#repositories';
 import { AuthService, UserService } from '#services';
-import { AuthController, UserController, Controller } from '#controllers';
+import {
+  AuthController,
+  UserController,
+  Controller,
+  socialAuthController,
+} from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware } from '#middlewares';
 
@@ -40,6 +45,7 @@ export const createContainer = () => {
   const controller = new Controller({
     authController,
     userController,
+    socialAuthController,
   });
 
   return { controller, db, authMiddleware };

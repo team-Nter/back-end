@@ -38,3 +38,8 @@ export const ERROR_MESSAGE = {
   RESOURCE_CONFLICT: '이미 존재하는 리소스입니다.',
   INTERNAL_SERVER_ERROR: '서버 내부 오류가 발생했습니다.',
 };
+
+export const EXIT_CODE = {
+  SUCCESS: 0,
+  FAILURE: 1,
+};

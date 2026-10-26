@@ -16,18 +16,18 @@ export class AuthService {
     this.#tokenProvider = tokenProvider;
   }
 
-  async signUp({ email, password, name }) {
+  async signUp({ email, passwordHash, nickname }) {
     const existingUser = await this.#userRepository.findByEmail(email);
     if (existingUser) {
       throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
     }
 
-    const hashedPassword = await this.#passwordProvider.hash(password);
+    const hashedPassword = await this.#passwordProvider.hash(passwordHash);
 
     const user = await this.#userRepository.create({
       email,
       password: hashedPassword,
-      name,
+      nickname,
     });
 
     const tokens = this.#tokenProvider.generateTokens(user);
