@@ -3,10 +3,12 @@ enum UserRole {
   USER
   ADMIN
 }
+
 enum AuthProvider {
   LOCAL
   GOOGLE
 }
+
 enum ChallengeStatus {
   PENDING
   APPROVED
@@ -20,7 +22,6 @@ enum ParticipationStatus {
 }
 
 enum SubmissionStatus {
-  DRAFT
   SUBMITTED
   WITHDRAWN
   CANCELLED
@@ -36,16 +37,17 @@ enum NotificationType {
 }
 
 enum ModerationAction {
-    APPROVE 
-    REJECT 
-    CANCEL 
-    DELETE
+  APPROVE
+  REJECT
+  CANCEL
+  DELETE
 }
+
 model User {
   id                Int                        @id @default(autoincrement())
   email             String                     @unique
   nickname          String?                    @unique
-  passwordHash      String?                    
+  passwordHash      String?
   role              UserRole                   @default(USER)
   grade             String
   provider          AuthProvider               @default(LOCAL)
@@ -54,19 +56,19 @@ model User {
   createdAt         TimestamptzString          @default(now())
   updatedAt         temporal.updatedAtString()
 
-  challengeRequests Challenge[]                
+  challengeRequests Challenge[]
   participations    Participation[]
-  feedbacks         Feedback[]                 
+  feedbacks         Feedback[]
   notifications     Notification[]
   likes             SubmissionLike[]
-  moderationLogs    ModerationLog[]            
+  moderationLogs    ModerationLog[]
 
   @@unique([provider, providerId])
 }
 
 model Challenge {
   id              Int                        @id @default(autoincrement())
-  requestorId     Int
+  requestorId     Int?
   title           String
   sourceUrl       String?
   description     String?
@@ -77,31 +79,34 @@ model Challenge {
   // API로 참여자 수, 도전 상태, 마감 시간 검사
   deadlineAt      TimestamptzString
   maxParticipants Int
-  status          ChallengeStatus                     @default(PENDING) // pending / approved / rejected / canceled
-	selectedAt      TimestamptzString?
+  status          ChallengeStatus            @default(PENDING) // pending / approved / rejected / canceled
+  selectedAt      TimestamptzString?
   createdAt       TimestamptzString          @default(now())
   updatedAt       temporal.updatedAtString()
 
-  requestor       User                       @relation(fields: [requestorId], references: [id], onDelete: Cascade)
+  requestor       User?                      @relation(fields: [requestorId], references: [id], onDelete: SetNull) // 화면에 표시해야 할 경우 화면에 별도 처리 예:탈퇴한 사용자
   participations  Participation[]
   notifications   Notification[]
   moderationLogs  ModerationLog[]
+  submissions     Submission[]
 
   @@index([requestorId])
   @@index([status, deadlineAt])
 }
 
 model Participation {
-  id          Int               @id @default(autoincrement())
-  challengeId Int
-  userId      Int
+  id              Int                 @id @default(autoincrement())
+  challengeId     Int
+  userId          Int?
 
-  status      ParticipationStatus            @default(ACTIVE) //ACTIVE WITHDRAWN
-  joinedAt    TimestamptzString @default(now())
+  status          ParticipationStatus @default(ACTIVE) //ACTIVE WITHDRAWN
+  joinedAt        TimestamptzString   @default(now())
 
-  challenge   Challenge         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  submission  Submission? // 아직 번역 제출하지 않았을 때
+  challenge       Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  submission      Submission? // 아직 번역 제출하지 않았을 때
+
+  submissionDraft SubmissionDraft[]
 
   // 동일한 도전에 같은 유저가 중복 참여하지 못하도록 제한
   @@unique([challengeId, userId]) // 재참여 불가능
@@ -110,22 +115,38 @@ model Participation {
 
 model Submission {
   id              Int                        @id @default(autoincrement())
-  participationId Int                        @unique
-  participation   Participation              @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  participationId Int?                       @unique
+  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: SetNull)
+  challengeId     Int
+  challenge       Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
   title           String
   content         String
-  status          SubmissionStatus                     @default(DRAFT) // DRAFT SUBMITTED WITHDRAWN CANCELLED
+  status          SubmissionStatus           @default(SUBMITTED) //  SUBMITTED WITHDRAWN CANCELLED
   isSelected      Boolean                    @default(false)
   createdAt       TimestamptzString          @default(now())
   updatedAt       temporal.updatedAtString()
-	lastedAt        temporal.updatedAtString()
+  submittedAt     TimestamptzString?
+
   likes           SubmissionLike[]
   feedbacks       Feedback[]
   notifications   Notification[]
-  
 
   @@index([status, createdAt])
+  @@index([challengeId])
+}
+
+model SubmissionDraft {
+  id              Int                        @id @default(autoincrement())
+
+  participationId Int?                       @unique
+  title           String?
+  content         String                     @default("")
+
+  createdAt       TimestamptzString          @default(now())
+  updatedAt       temporal.updatedAtString()
+
+  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: Cascade)
 }
 
 model SubmissionLike {
@@ -145,8 +166,8 @@ model Feedback {
   id            Int                        @id @default(autoincrement())
   submissionId  Int
   submission    Submission                 @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  authorId      Int
-  author        User                       @relation(fields: [authorId], references: [id])
+  authorId      Int?
+  author        User?                      @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   content       String
 
@@ -161,7 +182,7 @@ model Feedback {
 model Notification {
   id           Int                @id @default(autoincrement())
   recipientId  Int
-  type         NotificationType 
+  type         NotificationType
   message      String
 
   challengeId  Int?
@@ -172,25 +193,25 @@ model Notification {
   createdAt    TimestamptzString  @default(now())
 
   recipient    User               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  challenge    Challenge?         @relation(fields: [challengeId], references: [id], onDelete: SetNull)
-  submission   Submission?        @relation(fields: [submissionId], references: [id], onDelete: SetNull)
-  feedback     Feedback?          @relation(fields: [feedbackId], references: [id], onDelete: SetNull)
+  challenge    Challenge?         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  submission   Submission?        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  feedback     Feedback?          @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
 
   @@index([recipientId, readAt, createdAt])
 }
 
 model ModerationLog {
-  id           Int               @id @default(autoincrement())
-  submissionId Int
-  adminId      Int
+  id          Int               @id @default(autoincrement())
+  challengeId Int?
+  adminId     Int
 
-  action       ModerationAction // APPROVE / REJECT / CANCEL / DELETE
-  reason       String?
-  createdAt    TimestamptzString @default(now())
+  action      ModerationAction // APPROVE / REJECT / CANCEL / DELETE
+  reason      String?
+  createdAt   TimestamptzString @default(now())
 
-  challenge    Challenge         @relation(fields: [challengeId], references: [id], onDelete: SetNull)
-  admin        User              @relation(fields: [adminId], references: [id], onDelete: Restrict)
+  challenge   Challenge?        @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+  admin       User              @relation(fields: [adminId], references: [id], onDelete: Restrict)
 
-  @@index([submissionId, createdAt])
+  @@index([challengeId, createdAt])
   @@index([adminId, createdAt])
 }
