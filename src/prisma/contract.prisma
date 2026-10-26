@@ -1,0 +1,222 @@
+// use prisma-8
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserGrade {
+  EXPERT
+  NORMAL
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum ChallengeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}
+
+enum ParticipationStatus {
+  ACTIVE
+  WITHDRAWN
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  WITHDRAWN
+  CANCELLED
+}
+
+enum NotificationType {
+  CHALLENGE_PARTICIPATION
+  SUBMISSION_RECEIVED
+  FEEDBACK_RECEIVED
+  SUBMISSION_LIKED
+  CHALLENGE_CANCELLED
+  SUBMISSION_CANCELLED
+}
+
+enum ModerationAction {
+  APPROVE
+  REJECT
+  CANCEL
+  DELETE
+}
+
+model User {
+  id                Int                        @id @default(autoincrement())
+  email             String                     @unique
+  nickname          String?                    @unique
+  passwordHash      String?
+  role              UserRole                   @default(USER)
+  grade             UserGrade                  @default(NORMAL)
+  provider          AuthProvider               @default(LOCAL)
+  providerId        String?
+
+  createdAt         TimestamptzString          @default(now())
+  updatedAt         temporal.updatedAtString()
+
+  challengeRequests Challenge[]
+  participations    Participation[]
+  feedbacks         Feedback[]
+  notifications     Notification[]
+  likes             SubmissionLike[]
+  moderationLogs    ModerationLog[]
+
+  @@unique([provider, providerId])
+}
+
+model Challenge {
+  id              Int                        @id @default(autoincrement())
+  requestorId     Int?
+  title           String
+  sourceUrl       String?
+  description     String?
+
+  category        String
+  documentType    String
+
+  // API로 참여자 수, 도전 상태, 마감 시간 검사
+  deadlineAt      TimestamptzString
+  maxParticipants Int
+  status          ChallengeStatus            @default(PENDING) // pending / approved / rejected / canceled
+  selectedAt      TimestamptzString?
+  createdAt       TimestamptzString          @default(now())
+  updatedAt       temporal.updatedAtString()
+
+  requestor       User?                      @relation(fields: [requestorId], references: [id], onDelete: SetNull) // 화면에 표시해야 할 경우 화면에 별도 처리 예:탈퇴한 사용자
+  participations  Participation[]
+  notifications   Notification[]
+  moderationLogs  ModerationLog[]
+  submissions     Submission[]
+
+  @@index([requestorId])
+  @@index([status, deadlineAt])
+}
+
+model Participation {
+  id              Int                 @id @default(autoincrement())
+  challengeId     Int
+  userId          Int?
+
+  status          ParticipationStatus @default(ACTIVE) //ACTIVE WITHDRAWN
+  joinedAt        TimestamptzString   @default(now())
+
+  challenge       Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  submission      Submission? // 아직 번역 제출하지 않았을 때
+
+  submissionDraft SubmissionDraft[]
+
+  // 동일한 도전에 같은 유저가 중복 참여하지 못하도록 제한
+  @@unique([challengeId, userId]) // 재참여 불가능
+  @@index([userId, joinedAt])
+}
+
+model Submission {
+  id              Int                        @id @default(autoincrement())
+  participationId Int?                       @unique
+  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: SetNull)
+  challengeId     Int
+  challenge       Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  title           String
+  content         String
+  status          SubmissionStatus           @default(SUBMITTED) //  SUBMITTED WITHDRAWN CANCELLED
+  isSelected      Boolean                    @default(false)
+  createdAt       TimestamptzString          @default(now())
+  updatedAt       temporal.updatedAtString()
+  submittedAt     TimestamptzString?
+
+  likes           SubmissionLike[]
+  feedbacks       Feedback[]
+  notifications   Notification[]
+
+  @@index([status, createdAt])
+  @@index([challengeId])
+}
+
+model SubmissionDraft {
+  id              Int                        @id @default(autoincrement())
+
+  participationId Int?                       @unique
+  title           String?
+  content         String                     @default("")
+
+  createdAt       TimestamptzString          @default(now())
+  updatedAt       temporal.updatedAtString()
+
+  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model SubmissionLike {
+  userId       Int
+  submissionId Int
+  createdAt    TimestamptzString @default(now())
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submission   Submission        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  // 한 유저가 하나의 번역에 좋아요를 중복 등록하지 못하도록 제한
+  @@id([userId, submissionId])
+  @@index([submissionId, createdAt])
+}
+
+model Feedback {
+  id            Int                        @id @default(autoincrement())
+  submissionId  Int
+  submission    Submission                 @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  authorId      Int?
+  author        User?                      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  content       String
+
+  createdAt     TimestamptzString          @default(now())
+  updatedAt     temporal.updatedAtString()
+
+  notifications Notification[]
+
+  @@index([submissionId, createdAt])
+}
+
+model Notification {
+  id           Int                @id @default(autoincrement())
+  recipientId  Int
+  type         NotificationType
+  message      String
+
+  challengeId  Int?
+  submissionId Int?
+  feedbackId   Int?
+
+  readAt       TimestamptzString?
+  createdAt    TimestamptzString  @default(now())
+
+  recipient    User               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  challenge    Challenge?         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  submission   Submission?        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  feedback     Feedback?          @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, readAt, createdAt])
+}
+
+model ModerationLog {
+  id          Int               @id @default(autoincrement())
+  challengeId Int?
+  adminId     Int
+
+  action      ModerationAction // APPROVE / REJECT / CANCEL / DELETE
+  reason      String?
+  createdAt   TimestamptzString @default(now())
+
+  challenge   Challenge?        @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+  admin       User              @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([challengeId, createdAt])
+  @@index([adminId, createdAt])
+}

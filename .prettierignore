@@ -1,0 +1,6 @@
+# prisma contract emit이 만드는 파일
+src/prisma/contract.json
+src/prisma/contract.d.ts
+
+# prisma db init·db update가 만드는 기록
+migrations/

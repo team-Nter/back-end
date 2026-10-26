@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+env/*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+
+# Build output
+dist/
+build/
+
+# Prisma
+# prisma/schema.prisma와 마이그레이션은 커밋해야 합니다.
+# 생성된 클라이언트가 별도 경로에 있다면 해당 경로만 추가하세요.
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
