@@ -16,7 +16,6 @@
   },
   "scripts": {
     "dev": "nodemon --env-file=./env/.env.development ./src/main.js",
-    "prod": "node --env-file=./env/.env.production src/main.js",
     "prisma:emit": "dotenv -e ./env/.env.development -- prisma contract emit",
     "prisma:init": "dotenv -e ./env/.env.development -- prisma db init",
     "prisma:update": "dotenv -e ./env/.env.development -- prisma db update",
@@ -25,7 +24,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "node --test",
+    "start": "node ./src/main.js"
   },
   "keywords": [],
   "author": "",
