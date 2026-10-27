@@ -129,36 +129,6 @@
               }
             ]
           },
-          "ParticipationStatus": {
-            "codecId": "pg/text@1",
-            "members": [
-              {
-                "name": "ACTIVE",
-                "value": "ACTIVE"
-              },
-              {
-                "name": "WITHDRAWN",
-                "value": "WITHDRAWN"
-              }
-            ]
-          },
-          "SubmissionStatus": {
-            "codecId": "pg/text@1",
-            "members": [
-              {
-                "name": "SUBMITTED",
-                "value": "SUBMITTED"
-              },
-              {
-                "name": "WITHDRAWN",
-                "value": "WITHDRAWN"
-              },
-              {
-                "name": "CANCELED",
-                "value": "CANCELED"
-              }
-            ]
-          },
           "UserGrade": {
             "codecId": "pg/text@1",
             "members": [
@@ -835,19 +805,6 @@
                   "kind": "scalar"
                 }
               },
-              "status": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                },
-                "valueSet": {
-                  "entityKind": "enum",
-                  "entityName": "ParticipationStatus",
-                  "namespaceId": "public",
-                  "plane": "domain"
-                }
-              },
               "userId": {
                 "nullable": true,
                 "type": {
@@ -932,9 +889,6 @@
                 "joinedAt": {
                   "column": "joinedAt"
                 },
-                "status": {
-                  "column": "status"
-                },
                 "userId": {
                   "column": "userId"
                 }
@@ -985,19 +939,6 @@
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
-                }
-              },
-              "status": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                },
-                "valueSet": {
-                  "entityKind": "enum",
-                  "entityName": "SubmissionStatus",
-                  "namespaceId": "public",
-                  "plane": "domain"
                 }
               },
               "submittedAt": {
@@ -1120,9 +1061,6 @@
                 },
                 "participationId": {
                   "column": "participationId"
-                },
-                "status": {
-                  "column": "status"
                 },
                 "submittedAt": {
                   "column": "submittedAt"
@@ -2129,13 +2067,6 @@
               "uniques": []
             },
             "Participation": {
-              "checks": [
-                {
-                  "expression": "\"status\" IN ('ACTIVE', 'WITHDRAWN')",
-                  "name": "Participation_status_check_c2ced511",
-                  "prefix": "Participation_status_check"
-                }
-              ],
               "columns": {
                 "challengeId": {
                   "codecId": "pg/int4@1",
@@ -2159,21 +2090,6 @@
                     "kind": "function"
                   },
                   "nullable": false
-                },
-                "status": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "default": {
-                    "kind": "literal",
-                    "value": "ACTIVE"
-                  },
-                  "nullable": false,
-                  "valueSet": {
-                    "entityKind": "valueSet",
-                    "entityName": "ParticipationStatus",
-                    "namespaceId": "public",
-                    "plane": "storage"
-                  }
                 },
                 "userId": {
                   "codecId": "pg/int4@1",
@@ -2265,13 +2181,6 @@
               ]
             },
             "Submission": {
-              "checks": [
-                {
-                  "expression": "\"status\" IN ('SUBMITTED', 'WITHDRAWN', 'CANCELED')",
-                  "name": "Submission_status_check_7429d9c2",
-                  "prefix": "Submission_status_check"
-                }
-              ],
               "columns": {
                 "challengeId": {
                   "codecId": "pg/int4@1",
@@ -2315,21 +2224,6 @@
                   "dataType": "pg/int4",
                   "nullable": true
                 },
-                "status": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "default": {
-                    "kind": "literal",
-                    "value": "SUBMITTED"
-                  },
-                  "nullable": false,
-                  "valueSet": {
-                    "entityKind": "valueSet",
-                    "entityName": "SubmissionStatus",
-                    "namespaceId": "public",
-                    "plane": "storage"
-                  }
-                },
                 "submittedAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -2353,7 +2247,7 @@
                       "participationId"
                     ]
                   },
-                  "onDelete": "setNull",
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "participationId"
@@ -2397,15 +2291,6 @@
                   ],
                   "name": "Submission_challengeId_idx_73b8115d",
                   "prefix": "Submission_challengeId_idx",
-                  "unique": false
-                },
-                {
-                  "columns": [
-                    "status",
-                    "createdAt"
-                  ],
-                  "name": "Submission_status_createdAt_idx_58610442",
-                  "prefix": "Submission_status_createdAt_idx",
                   "unique": false
                 }
               ],
@@ -2776,21 +2661,6 @@
                 "SUBMISSION_CANCELLED"
               ]
             },
-            "ParticipationStatus": {
-              "kind": "valueSet",
-              "values": [
-                "ACTIVE",
-                "WITHDRAWN"
-              ]
-            },
-            "SubmissionStatus": {
-              "kind": "valueSet",
-              "values": [
-                "SUBMITTED",
-                "WITHDRAWN",
-                "CANCELED"
-              ]
-            },
             "UserGrade": {
               "kind": "valueSet",
               "values": [
@@ -2811,7 +2681,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8cfaab6a9fe42eae4387334dba6a38a5b3b672e25c62ddfbe119d724e60fea94"
+    "storageHash": "8ff7d346918b2a83613b62ab58c78bfafa89bfb7639643176a77ab1e4dfea5a6"
   },
   "execution": {
     "executionHash": "eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2",

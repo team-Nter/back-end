@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8cfaab6a9fe42eae4387334dba6a38a5b3b672e25c62ddfbe119d724e60fea94'>;
+  StorageHashBase<'8ff7d346918b2a83613b62ab58c78bfafa89bfb7639643176a77ab1e4dfea5a6'>;
 export type ExecutionHash =
   ExecutionHashBase<'eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2'>;
 export type ProfileHash =
@@ -271,18 +271,6 @@ type FieldTypeOverrides = {
             | 'SUBMISSION_CANCELLED';
         };
       };
-      readonly Participation: {
-        readonly status: {
-          readonly output: 'ACTIVE' | 'WITHDRAWN';
-          readonly input: 'ACTIVE' | 'WITHDRAWN';
-        };
-      };
-      readonly Submission: {
-        readonly status: {
-          readonly output: 'SUBMITTED' | 'WITHDRAWN' | 'CANCELED';
-          readonly input: 'SUBMITTED' | 'WITHDRAWN' | 'CANCELED';
-        };
-      };
       readonly User: {
         readonly grade: {
           readonly output: 'EXPERT' | 'NORMAL';
@@ -341,18 +329,6 @@ type ColumnTypeOverrides = {
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELLED'
           | 'SUBMISSION_CANCELLED';
-      };
-    };
-    readonly Participation: {
-      readonly status: {
-        readonly output: 'ACTIVE' | 'WITHDRAWN';
-        readonly input: 'ACTIVE' | 'WITHDRAWN';
-      };
-    };
-    readonly Submission: {
-      readonly status: {
-        readonly output: 'SUBMITTED' | 'WITHDRAWN' | 'CANCELED';
-        readonly input: 'SUBMITTED' | 'WITHDRAWN' | 'CANCELED';
       };
     };
     readonly User: {
@@ -446,7 +422,6 @@ export namespace Models {
     challengeId: FieldOutputTypes['public']['Participation']['challengeId'];
     id: FieldOutputTypes['public']['Participation']['id'];
     joinedAt: FieldOutputTypes['public']['Participation']['joinedAt'];
-    status: FieldOutputTypes['public']['Participation']['status'];
     userId: FieldOutputTypes['public']['Participation']['userId'];
     challenge: public_Challenge;
     submission: public_Submission | null;
@@ -461,7 +436,6 @@ export namespace Models {
     id: FieldOutputTypes['public']['Submission']['id'];
     isSelected: FieldOutputTypes['public']['Submission']['isSelected'];
     participationId: FieldOutputTypes['public']['Submission']['participationId'];
-    status: FieldOutputTypes['public']['Submission']['status'];
     submittedAt: FieldOutputTypes['public']['Submission']['submittedAt'];
     title: FieldOutputTypes['public']['Submission']['title'];
     updatedAt: FieldOutputTypes['public']['Submission']['updatedAt'];
@@ -1035,16 +1009,6 @@ type ContractBase = Omit<
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                   readonly many: false;
                 };
-                readonly status: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'ACTIVE'>;
-                  };
-                  readonly many: false;
-                };
                 readonly userId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
@@ -1148,16 +1112,6 @@ type ContractBase = Omit<
                   readonly nullable: true;
                   readonly many: false;
                 };
-                readonly status: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'SUBMITTED'>;
-                  };
-                  readonly many: false;
-                };
                 readonly submittedAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
@@ -1184,12 +1138,6 @@ type ContractBase = Omit<
                   readonly name: 'Submission_challengeId_idx_73b8115d';
                   readonly prefix: 'Submission_challengeId_idx';
                   readonly columns: readonly ['challengeId'];
-                  readonly unique: false;
-                },
-                {
-                  readonly name: 'Submission_status_createdAt_idx_58610442';
-                  readonly prefix: 'Submission_status_createdAt_idx';
-                  readonly columns: readonly ['status', 'createdAt'];
                   readonly unique: false;
                 },
               ];
@@ -1470,14 +1418,6 @@ type ContractBase = Omit<
                 'CHALLENGE_CANCELLED',
                 'SUBMISSION_CANCELLED',
               ];
-            };
-            readonly ParticipationStatus: {
-              readonly kind: 'valueSet';
-              readonly values: readonly ['ACTIVE', 'WITHDRAWN'];
-            };
-            readonly SubmissionStatus: {
-              readonly kind: 'valueSet';
-              readonly values: readonly ['SUBMITTED', 'WITHDRAWN', 'CANCELED'];
             };
             readonly UserGrade: {
               readonly kind: 'valueSet';
@@ -1943,10 +1883,6 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
-              readonly status: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
               readonly userId: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -2005,7 +1941,6 @@ type ContractBase = Omit<
                 readonly challengeId: { readonly column: 'challengeId' };
                 readonly id: { readonly column: 'id' };
                 readonly joinedAt: { readonly column: 'joinedAt' };
-                readonly status: { readonly column: 'status' };
                 readonly userId: { readonly column: 'userId' };
               };
             };
@@ -2038,10 +1973,6 @@ type ContractBase = Omit<
               readonly participationId: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly status: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly submittedAt: {
                 readonly nullable: true;
@@ -2131,7 +2062,6 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly isSelected: { readonly column: 'isSelected' };
                 readonly participationId: { readonly column: 'participationId' };
-                readonly status: { readonly column: 'status' };
                 readonly submittedAt: { readonly column: 'submittedAt' };
                 readonly title: { readonly column: 'title' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
@@ -2424,21 +2354,6 @@ type ContractBase = Omit<
               { readonly name: 'SUBMISSION_CANCELLED'; readonly value: 'SUBMISSION_CANCELLED' },
             ];
           };
-          readonly ParticipationStatus: {
-            readonly codecId: 'pg/text@1';
-            readonly members: readonly [
-              { readonly name: 'ACTIVE'; readonly value: 'ACTIVE' },
-              { readonly name: 'WITHDRAWN'; readonly value: 'WITHDRAWN' },
-            ];
-          };
-          readonly SubmissionStatus: {
-            readonly codecId: 'pg/text@1';
-            readonly members: readonly [
-              { readonly name: 'SUBMITTED'; readonly value: 'SUBMITTED' },
-              { readonly name: 'WITHDRAWN'; readonly value: 'WITHDRAWN' },
-              { readonly name: 'CANCELED'; readonly value: 'CANCELED' },
-            ];
-          };
           readonly UserGrade: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
@@ -2478,15 +2393,6 @@ type ContractBase = Omit<
             { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
             { readonly name: 'CHALLENGE_CANCELLED'; readonly value: 'CHALLENGE_CANCELLED' },
             { readonly name: 'SUBMISSION_CANCELLED'; readonly value: 'SUBMISSION_CANCELLED' },
-          ];
-          readonly ParticipationStatus: readonly [
-            { readonly name: 'ACTIVE'; readonly value: 'ACTIVE' },
-            { readonly name: 'WITHDRAWN'; readonly value: 'WITHDRAWN' },
-          ];
-          readonly SubmissionStatus: readonly [
-            { readonly name: 'SUBMITTED'; readonly value: 'SUBMITTED' },
-            { readonly name: 'WITHDRAWN'; readonly value: 'WITHDRAWN' },
-            { readonly name: 'CANCELED'; readonly value: 'CANCELED' },
           ];
           readonly UserGrade: readonly [
             { readonly name: 'EXPERT'; readonly value: 'EXPERT' },
