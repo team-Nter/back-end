@@ -19,73 +19,129 @@ export class ChallengeRepository {
     this.#db = db;
   }
 
-  findById(id) {
-    return this.#db.orm.public.Challenge.where({ id: Number(id) })
-      .select(...this.#fields)
-      .include('participations', (p) => p.where({ status: 'ACTIVE' }).count())
-      .first();
-  } // 챌린지 상세
+  #orm(tx) {
+    return (tx ?? this.#db).orm.public;
+  }
 
+  // 챌린지 상세
+  findById(id) {
+    return this.#orm()
+      .Challenge.where({ id })
+      .select(...this.#fields)
+      .include('requestor', (requestor) => requestor.select('id', 'nickname'))
+      .include('participations', (participations) =>
+        participations.combine({
+          participantCount: participations.where({ status: 'ACTIVE' }).count(),
+          submission: participations
+            .where((x) => x.submission.some({ status: 'SUBMITTED' }))
+            .count(),
+        }),
+      )
+      .first();
+  }
+
+  //챌린지 목록(공개/관리자/내가 신청한/내가 참여한)
   findMany({ page = 1, pageSize = 10, ...filters } = {}) {
     return this.#buildListQuery(filters)
       .select(...this.#fields)
-      .include('participations', (p) => p.where({ status: 'ACTIVE' }).count())
-      .orderBy((c) => c.createdAt.desc())
+      .include('requestor', (requestor) => requestor.select('id', 'nickname'))
+      .include('participations', (participations) =>
+        participations.where({ status: 'ACTIVE' }).count(),
+      )
+      .orderBy((challenge) => challenge.createdAt.desc())
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .all();
-  } //챌린지 목록
+  }
 
+  // 목록 전체 개수 (페이지네이션용)
   count(filters) {
     return this.#buildListQuery(filters).aggregate((agg) => ({
       total: agg.count(),
     }));
-  } // filter된 게시물 가져오기
+  }
 
+  //챌린지 신청
   create(data) {
-    return this.#db.orm.public.Challenge.select(...this.#fields).create(data);
-  } //챌린지 생성
+    return this.#orm()
+      .Challenge.select(...this.#fields)
+      .create(data);
+  }
 
-  update(id, data) {
-    return this.#db.orm.public.Challenge.where({
-      id: Number(id),
-    })
+  // 챌린지 수정 (ADMIN)
+  update(id, data, { tx } = {}) {
+    return this.#orm(tx)
+      .Challenge.where({ id })
       .select(...this.#fields)
       .update(data);
-  } // 챌린지 수정 (ADMIN)
+  }
 
+  //본인 + 승인 대기일 때만 수정
   updateByRequestor(id, requestorId, data) {
-    return this.#db.orm.public.Challenge.where({
-      id,
-      requestorId,
-      status: 'PENDING',
-    })
+    return this.#orm()
+      .Challenge.where({
+        id,
+        requestorId,
+        status: 'PENDING',
+      })
       .select(...this.#fields)
       .update(data);
-  } //본인 + 승인 대기일 때만 수정
+  }
 
+  //(현재 상태가 from일 때만 to로 변경)
+  changeStatus(id, from, to, { tx } = {}) {
+    return this.#orm(tx)
+      .Challenge.where({ id, status: from })
+      .select(...this.#fields)
+      .update({ status: to });
+  }
+
+  //신청 취소(승인 대기 일 때만)
   cancel(id, requestorId) {
-    return this.#db.orm.public.Challenge.where({
-      id,
-      requestorId,
-      status: 'PENDING',
-    })
+    return this.#orm()
+      .Challenge.where({
+        id,
+        requestorId,
+        status: 'PENDING',
+      })
       .select(...this.#fields)
       .update({ status: 'CANCELED' });
   }
 
-  softDelete(id) {
-    return this.#db.orm.public.Challenge.where({ id })
-      .select(...this.#fields)
-      .update({ status: 'DELETED' });
+  //삭제 (참여 이력이 없을 때만 실제 삭제)
+  deleteIfNoActivity(id, { tx } = {}) {
+    return this.#orm(tx)
+      .Challenge.where({ id })
+      .where((challenge) => challenge.participations.none())
+      .delete();
   }
 
-  #buildListQuery({ category, documentType, state, keyword } = {}) {
-    let query = this.#db.orm.public.Challenge.where({ status: 'APPROVED' });
+  #buildListQuery({
+    statuses = ['APPROVED'],
+    category,
+    documentType,
+    state,
+    keyword,
+    requestorId,
+    participantUserId,
+  } = {}) {
+    let query = this.#orm().Challenge.where((challenge) =>
+      challenge.status.in(statuses),
+    );
 
+    if (requestorId) {
+      query = query.where({ requestorId });
+    }
+
+    if (participantUserId) {
+      query = query.where((challenge) =>
+        challenge.participations.some({ userId: participantUserId }),
+      );
+    }
     if (category?.length) {
       query = query.where((challenge) => challenge.category.in(category));
     }
+
     if (documentType) {
       query = query.where({ documentType });
     }
@@ -96,7 +152,6 @@ export class ChallengeRepository {
     } else if (state === 'closed') {
       query = query.where((challenge) => challenge.deadlineAt.lte(now));
     }
-
     if (keyword) {
       query = query.where((challenge) => challenge.title.ilike(`%${keyword}%`));
     }
