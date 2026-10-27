@@ -27,7 +27,7 @@ export class App {
   }
 
   routes(controller) {
-    this.app.use('/api', controller.router());
+    this.app.use('/api', controller.router);
   }
 
   listen(port) {

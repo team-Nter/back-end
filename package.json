@@ -20,6 +20,7 @@
     "prisma:emit": "dotenv -e ./env/.env.development -- prisma contract emit",
     "prisma:init": "dotenv -e ./env/.env.development -- prisma db init",
     "prisma:update": "dotenv -e ./env/.env.development -- prisma db update",
+    "db:init": "dotenv -e ./env/.env.development -- prisma db init",
     "seed": "node --env-file=./env/.env.development ./scripts/seed.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
