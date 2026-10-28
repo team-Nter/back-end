@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8ff7d346918b2a83613b62ab58c78bfafa89bfb7639643176a77ab1e4dfea5a6'>;
+  StorageHashBase<'3f4f42440fb31011248ff9e5985a58cde57cc71ddff3077ef07201c905ea1ed1'>;
 export type ExecutionHash =
   ExecutionHashBase<'eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2'>;
 export type ProfileHash =
@@ -260,15 +260,15 @@ type FieldTypeOverrides = {
             | 'SUBMISSION_RECEIVED'
             | 'FEEDBACK_RECEIVED'
             | 'SUBMISSION_LIKED'
-            | 'CHALLENGE_CANCELLED'
-            | 'SUBMISSION_CANCELLED';
+            | 'CHALLENGE_CANCELED'
+            | 'SUBMISSION_CANCELED';
           readonly input:
             | 'CHALLENGE_PARTICIPATION'
             | 'SUBMISSION_RECEIVED'
             | 'FEEDBACK_RECEIVED'
             | 'SUBMISSION_LIKED'
-            | 'CHALLENGE_CANCELLED'
-            | 'SUBMISSION_CANCELLED';
+            | 'CHALLENGE_CANCELED'
+            | 'SUBMISSION_CANCELED';
         };
       };
       readonly User: {
@@ -320,15 +320,15 @@ type ColumnTypeOverrides = {
           | 'SUBMISSION_RECEIVED'
           | 'FEEDBACK_RECEIVED'
           | 'SUBMISSION_LIKED'
-          | 'CHALLENGE_CANCELLED'
-          | 'SUBMISSION_CANCELLED';
+          | 'CHALLENGE_CANCELED'
+          | 'SUBMISSION_CANCELED';
         readonly input:
           | 'CHALLENGE_PARTICIPATION'
           | 'SUBMISSION_RECEIVED'
           | 'FEEDBACK_RECEIVED'
           | 'SUBMISSION_LIKED'
-          | 'CHALLENGE_CANCELLED'
-          | 'SUBMISSION_CANCELLED';
+          | 'CHALLENGE_CANCELED'
+          | 'SUBMISSION_CANCELED';
       };
     };
     readonly User: {
@@ -425,9 +425,9 @@ export namespace Models {
     userId: FieldOutputTypes['public']['Participation']['userId'];
     challenge: public_Challenge;
     submission: public_Submission | null;
-    submissionDraft: public_SubmissionDraft[];
+    submissionDrafts: public_SubmissionDraft[];
     user: public_User | null;
-    readonly [RelationKeys]?: 'challenge' | 'submission' | 'submissionDraft' | 'user';
+    readonly [RelationKeys]?: 'challenge' | 'submission' | 'submissionDrafts' | 'user';
   };
   export type public_Submission = {
     challengeId: FieldOutputTypes['public']['Submission']['challengeId'];
@@ -443,7 +443,7 @@ export namespace Models {
     feedbacks: public_Feedback[];
     likes: public_SubmissionLike[];
     notifications: public_Notification[];
-    participation: public_Participation | null;
+    participation: public_Participation;
     readonly [RelationKeys]?:
       'challenge' | 'feedbacks' | 'likes' | 'notifications' | 'participation';
   };
@@ -454,7 +454,7 @@ export namespace Models {
     participationId: FieldOutputTypes['public']['SubmissionDraft']['participationId'];
     title: FieldOutputTypes['public']['SubmissionDraft']['title'];
     updatedAt: FieldOutputTypes['public']['SubmissionDraft']['updatedAt'];
-    participation: public_Participation | null;
+    participation: public_Participation;
     readonly [RelationKeys]?: 'participation';
   };
   export type public_SubmissionLike = {
@@ -1109,7 +1109,7 @@ type ContractBase = Omit<
                 readonly participationId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
-                  readonly nullable: true;
+                  readonly nullable: false;
                   readonly many: false;
                 };
                 readonly submittedAt: {
@@ -1200,7 +1200,7 @@ type ContractBase = Omit<
                 readonly participationId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
-                  readonly nullable: true;
+                  readonly nullable: false;
                   readonly many: false;
                 };
                 readonly title: {
@@ -1217,8 +1217,21 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['participationId'] }];
-              indexes: readonly [];
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'SubmissionDraft_participationId_idx_1840362d';
+                  readonly prefix: 'SubmissionDraft_participationId_idx';
+                  readonly columns: readonly ['participationId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'SubmissionDraft_participationId_updatedAt_idx_5543cdd3';
+                  readonly prefix: 'SubmissionDraft_participationId_updatedAt_idx';
+                  readonly columns: readonly ['participationId', 'updatedAt'];
+                  readonly unique: false;
+                },
+              ];
               foreignKeys: readonly [
                 {
                   readonly source: {
@@ -1415,8 +1428,8 @@ type ContractBase = Omit<
                 'SUBMISSION_RECEIVED',
                 'FEEDBACK_RECEIVED',
                 'SUBMISSION_LIKED',
-                'CHALLENGE_CANCELLED',
-                'SUBMISSION_CANCELLED',
+                'CHALLENGE_CANCELED',
+                'SUBMISSION_CANCELED',
               ];
             };
             readonly UserGrade: {
@@ -1913,7 +1926,7 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['participationId'];
                 };
               };
-              readonly submissionDraft: {
+              readonly submissionDrafts: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'SubmissionDraft';
@@ -1971,7 +1984,7 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
               readonly participationId: {
-                readonly nullable: true;
+                readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly submittedAt: {
@@ -2045,7 +2058,7 @@ type ContractBase = Omit<
                   readonly model: 'Participation';
                 };
                 readonly cardinality: 'N:1';
-                readonly nullable: true;
+                readonly nullable: false;
                 readonly on: {
                   readonly localFields: readonly ['participationId'];
                   readonly targetFields: readonly ['id'];
@@ -2086,7 +2099,7 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly participationId: {
-                readonly nullable: true;
+                readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly title: {
@@ -2108,7 +2121,7 @@ type ContractBase = Omit<
                   readonly model: 'Participation';
                 };
                 readonly cardinality: 'N:1';
-                readonly nullable: true;
+                readonly nullable: false;
                 readonly on: {
                   readonly localFields: readonly ['participationId'];
                   readonly targetFields: readonly ['id'];
@@ -2350,8 +2363,8 @@ type ContractBase = Omit<
               { readonly name: 'SUBMISSION_RECEIVED'; readonly value: 'SUBMISSION_RECEIVED' },
               { readonly name: 'FEEDBACK_RECEIVED'; readonly value: 'FEEDBACK_RECEIVED' },
               { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
-              { readonly name: 'CHALLENGE_CANCELLED'; readonly value: 'CHALLENGE_CANCELLED' },
-              { readonly name: 'SUBMISSION_CANCELLED'; readonly value: 'SUBMISSION_CANCELLED' },
+              { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
+              { readonly name: 'SUBMISSION_CANCELED'; readonly value: 'SUBMISSION_CANCELED' },
             ];
           };
           readonly UserGrade: {
@@ -2391,8 +2404,8 @@ type ContractBase = Omit<
             { readonly name: 'SUBMISSION_RECEIVED'; readonly value: 'SUBMISSION_RECEIVED' },
             { readonly name: 'FEEDBACK_RECEIVED'; readonly value: 'FEEDBACK_RECEIVED' },
             { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
-            { readonly name: 'CHALLENGE_CANCELLED'; readonly value: 'CHALLENGE_CANCELLED' },
-            { readonly name: 'SUBMISSION_CANCELLED'; readonly value: 'SUBMISSION_CANCELLED' },
+            { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
+            { readonly name: 'SUBMISSION_CANCELED'; readonly value: 'SUBMISSION_CANCELED' },
           ];
           readonly UserGrade: readonly [
             { readonly name: 'EXPERT'; readonly value: 'EXPERT' },

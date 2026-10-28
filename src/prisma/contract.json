@@ -120,12 +120,12 @@
                 "value": "SUBMISSION_LIKED"
               },
               {
-                "name": "CHALLENGE_CANCELLED",
-                "value": "CHALLENGE_CANCELLED"
+                "name": "CHALLENGE_CANCELED",
+                "value": "CHALLENGE_CANCELED"
               },
               {
-                "name": "SUBMISSION_CANCELLED",
-                "value": "SUBMISSION_CANCELLED"
+                "name": "SUBMISSION_CANCELED",
+                "value": "SUBMISSION_CANCELED"
               }
             ]
           },
@@ -846,7 +846,7 @@
                   "namespace": "public"
                 }
               },
-              "submissionDraft": {
+              "submissionDrafts": {
                 "cardinality": "1:N",
                 "on": {
                   "localFields": [
@@ -935,7 +935,7 @@
                 }
               },
               "participationId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1027,7 +1027,7 @@
               },
               "participation": {
                 "cardinality": "N:1",
-                "nullable": true,
+                "nullable": false,
                 "on": {
                   "localFields": [
                     "participationId"
@@ -1100,7 +1100,7 @@
                 }
               },
               "participationId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1124,7 +1124,7 @@
             "relations": {
               "participation": {
                 "cardinality": "N:1",
-                "nullable": true,
+                "nullable": false,
                 "on": {
                   "localFields": [
                     "participationId"
@@ -1867,8 +1867,8 @@
             "Notification": {
               "checks": [
                 {
-                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELLED', 'SUBMISSION_CANCELLED')",
-                  "name": "Notification_type_check_d91b8087",
+                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'SUBMISSION_CANCELED')",
+                  "name": "Notification_type_check_c1afde36",
                   "prefix": "Notification_type_check"
                 }
               ],
@@ -1958,7 +1958,7 @@
                   "index": {
                     "name": "Notification_challengeId_idx_73b8115d"
                   },
-                  "onDelete": "cascade",
+                  "onDelete": "setNull",
                   "source": {
                     "columns": [
                       "challengeId"
@@ -1978,7 +1978,7 @@
                   "index": {
                     "name": "Notification_submissionId_idx_89cd3f4e"
                   },
-                  "onDelete": "cascade",
+                  "onDelete": "setNull",
                   "source": {
                     "columns": [
                       "submissionId"
@@ -1998,7 +1998,7 @@
                   "index": {
                     "name": "Notification_feedbackId_idx_1ce420e7"
                   },
-                  "onDelete": "cascade",
+                  "onDelete": "setNull",
                   "source": {
                     "columns": [
                       "feedbackId"
@@ -2222,7 +2222,7 @@
                 "participationId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": true
+                  "nullable": false
                 },
                 "submittedAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -2339,7 +2339,7 @@
                 "participationId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": true
+                  "nullable": false
                 },
                 "title": {
                   "codecId": "pg/text@1",
@@ -2355,9 +2355,7 @@
               "foreignKeys": [
                 {
                   "index": {
-                    "unique": [
-                      "participationId"
-                    ]
+                    "name": "SubmissionDraft_participationId_idx_1840362d"
                   },
                   "onDelete": "cascade",
                   "source": {
@@ -2376,19 +2374,31 @@
                   }
                 }
               ],
-              "indexes": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "participationId"
+                  ],
+                  "name": "SubmissionDraft_participationId_idx_1840362d",
+                  "prefix": "SubmissionDraft_participationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "participationId",
+                    "updatedAt"
+                  ],
+                  "name": "SubmissionDraft_participationId_updatedAt_idx_5543cdd3",
+                  "prefix": "SubmissionDraft_participationId_updatedAt_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
                 ]
               },
-              "uniques": [
-                {
-                  "columns": [
-                    "participationId"
-                  ]
-                }
-              ]
+              "uniques": []
             },
             "SubmissionLike": {
               "columns": {
@@ -2657,8 +2667,8 @@
                 "SUBMISSION_RECEIVED",
                 "FEEDBACK_RECEIVED",
                 "SUBMISSION_LIKED",
-                "CHALLENGE_CANCELLED",
-                "SUBMISSION_CANCELLED"
+                "CHALLENGE_CANCELED",
+                "SUBMISSION_CANCELED"
               ]
             },
             "UserGrade": {
@@ -2681,7 +2691,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8ff7d346918b2a83613b62ab58c78bfafa89bfb7639643176a77ab1e4dfea5a6"
+    "storageHash": "3f4f42440fb31011248ff9e5985a58cde57cc71ddff3077ef07201c905ea1ed1"
   },
   "execution": {
     "executionHash": "eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2",

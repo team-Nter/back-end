@@ -26,8 +26,8 @@ enum NotificationType {
   SUBMISSION_RECEIVED
   FEEDBACK_RECEIVED
   SUBMISSION_LIKED
-  CHALLENGE_CANCELLED
-  SUBMISSION_CANCELLED
+  CHALLENGE_CANCELED
+  SUBMISSION_CANCELED
 }
 
 enum ModerationAction {
@@ -99,17 +99,17 @@ model Participation {
   user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   submission      Submission? // 아직 번역 제출하지 않았을 때
 
-  submissionDraft SubmissionDraft[]
+  submissionDrafts SubmissionDraft[]
 
-  // 동일한 도전에 같은 유저가 중복 참여하지 못하도록 제한
-  @@unique([challengeId, userId]) // 재참여 불가능
+  // 동시 중복 참여 방지
+  @@unique([challengeId, userId]) 
   @@index([userId, joinedAt])
 }
 
 model Submission {
   id              Int                        @id @default(autoincrement())
-  participationId Int?                       @unique
-  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  participationId Int                        @unique
+  participation   Participation              @relation(fields: [participationId], references: [id], onDelete: Cascade)
   challengeId     Int
   challenge       Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
@@ -130,14 +130,16 @@ model Submission {
 model SubmissionDraft {
   id              Int                        @id @default(autoincrement())
 
-  participationId Int?                       @unique
+  participationId Int                       
   title           String?
   content         String                     @default("")
 
   createdAt       TimestamptzString          @default(now())
   updatedAt       temporal.updatedAtString()
 
-  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  participation   Participation              @relation(fields: [participationId], references: [id], onDelete: Cascade)
+	
+	@@index([participationId, updatedAt])  
 }
 
 model SubmissionLike {
@@ -184,9 +186,9 @@ model Notification {
   createdAt    TimestamptzString  @default(now())
 
   recipient    User               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  challenge    Challenge?         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  submission   Submission?        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  feedback     Feedback?          @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  challenge    Challenge?         @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+  submission   Submission?        @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  feedback     Feedback?          @relation(fields: [feedbackId], references: [id], onDelete: SetNull)
 
   @@index([recipientId, readAt, createdAt])
 }
