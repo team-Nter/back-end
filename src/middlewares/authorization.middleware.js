@@ -1,10 +1,10 @@
 import { ERROR_MESSAGE } from '#constants';
 import { UnauthorizedException, ForbiddenException } from '#exceptions';
 
-export class authorizationMiddleware {
+export class AuthorizationMiddleware {
   #userRepository;
 
-  constructors({ userRepository }) {
+  constructor({ userRepository }) {
     this.#userRepository = userRepository;
   }
 
@@ -21,7 +21,7 @@ export class authorizationMiddleware {
       if (!req.user) {
         throw new UnauthorizedException(ERROR_MESSAGE.UNAUTHORIZED);
       }
-      const user = await this.#userRepository.findById(req.user.id);
+      const user = await this.#userRepository.findRoleById(req.user.id);
 
       if (!user) {
         throw new UnauthorizedException(

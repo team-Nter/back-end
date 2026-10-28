@@ -29,14 +29,8 @@ export class ChallengeRepository {
       .Challenge.where({ id })
       .select(...this.#fields)
       .include('requestor', (requestor) => requestor.select('id', 'nickname'))
-      .include('participations', (participations) =>
-        participations.combine({
-          participantCount: participations.where({ status: 'ACTIVE' }).count(),
-          submission: participations
-            .where((x) => x.submission.some({ status: 'SUBMITTED' }))
-            .count(),
-        }),
-      )
+      .include('participations', (participations) => participations.count())
+      .include('submissions', (submissions) => submissions.count())
       .first();
   }
 
@@ -45,9 +39,7 @@ export class ChallengeRepository {
     return this.#buildListQuery(filters)
       .select(...this.#fields)
       .include('requestor', (requestor) => requestor.select('id', 'nickname'))
-      .include('participations', (participations) =>
-        participations.where({ status: 'ACTIVE' }).count(),
-      )
+      .include('participations', (participations) => participations.count())
       .orderBy((challenge) => challenge.createdAt.desc())
       .offset((page - 1) * pageSize)
       .limit(pageSize)
@@ -113,6 +105,7 @@ export class ChallengeRepository {
     return this.#orm(tx)
       .Challenge.where({ id })
       .where((challenge) => challenge.participations.none())
+      .where((challenge) => challenge.submissions.none())
       .delete();
   }
 
