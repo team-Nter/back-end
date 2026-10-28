@@ -10,21 +10,23 @@
     "#constants": "./src/common/constants/index.js",
     "#exceptions": "./src/common/exceptions/index.js",
     "#controllers": "./src/controllers/index.js",
+    "#controller": "./src/controllers/*",
     "#services": "./src/services/index.js",
     "#middlewares": "./src/middlewares/index.js",
     "#providers": "./src/providers/index.js"
   },
   "scripts": {
     "dev": "nodemon --env-file=./env/.env.development ./src/main.js",
-    "prod": "node --env-file=./env/.env.production src/main.js",
     "prisma:emit": "dotenv -e ./env/.env.development -- prisma contract emit",
     "prisma:init": "dotenv -e ./env/.env.development -- prisma db init",
     "prisma:update": "dotenv -e ./env/.env.development -- prisma db update",
+    "db:init": "dotenv -e ./env/.env.development -- prisma db init",
     "seed": "node --env-file=./env/.env.development ./scripts/seed.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "node --test",
+    "start": "node ./src/main.js"
   },
   "keywords": [],
   "author": "",

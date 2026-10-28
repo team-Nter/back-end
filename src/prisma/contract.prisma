@@ -21,17 +21,6 @@ enum ChallengeStatus {
   CANCELED
 }
 
-enum ParticipationStatus {
-  ACTIVE
-  WITHDRAWN
-}
-
-enum SubmissionStatus {
-  SUBMITTED
-  WITHDRAWN
-  CANCELLED
-}
-
 enum NotificationType {
   CHALLENGE_PARTICIPATION
   SUBMISSION_RECEIVED
@@ -75,7 +64,7 @@ model Challenge {
   id              Int                        @id @default(autoincrement())
   requestorId     Int?
   title           String
-  sourceUrl       String?
+  sourceUrl       String
   description     String?
 
   category        String
@@ -104,7 +93,6 @@ model Participation {
   challengeId     Int
   userId          Int?
 
-  status          ParticipationStatus @default(ACTIVE) //ACTIVE WITHDRAWN
   joinedAt        TimestamptzString   @default(now())
 
   challenge       Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
@@ -121,13 +109,12 @@ model Participation {
 model Submission {
   id              Int                        @id @default(autoincrement())
   participationId Int?                       @unique
-  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: SetNull)
+  participation   Participation?             @relation(fields: [participationId], references: [id], onDelete: Cascade)
   challengeId     Int
   challenge       Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
   title           String
   content         String
-  status          SubmissionStatus           @default(SUBMITTED) //  SUBMITTED WITHDRAWN CANCELLED
   isSelected      Boolean                    @default(false)
   createdAt       TimestamptzString          @default(now())
   updatedAt       temporal.updatedAtString()
@@ -137,7 +124,6 @@ model Submission {
   feedbacks       Feedback[]
   notifications   Notification[]
 
-  @@index([status, createdAt])
   @@index([challengeId])
 }
 
@@ -220,3 +206,4 @@ model ModerationLog {
   @@index([challengeId, createdAt])
   @@index([adminId, createdAt])
 }
+
