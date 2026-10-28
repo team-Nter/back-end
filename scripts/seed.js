@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import postgres from '@prisma/orm-postgres/runtime';
 import bcrypt from 'bcrypt';
 import contractJson from '../src/prisma/contract.json' with { type: 'json' };
+import { fileURLToPath } from 'node:url';
 
 const BCRYPT_SALT_ROUNDS = 10;
 const SEED_PASSWORD = 'password1234!';
@@ -369,12 +370,14 @@ const db = postgres({
 
 const seeder = new Seeder(db, 5);
 
-seeder
-  .seed()
-  .catch((e) => {
-    console.error('❌ 시딩 에러:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await db.close();
-  });
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  seeder
+    .seed()
+    .catch((e) => {
+      console.error('❌ 시딩 에러:', e);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await db.close();
+    });
+}
