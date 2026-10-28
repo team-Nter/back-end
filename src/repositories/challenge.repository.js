@@ -131,8 +131,11 @@ export class ChallengeRepository {
         challenge.participations.some({ userId: participantUserId }),
       );
     }
-    if (category?.length) {
-      query = query.where((challenge) => challenge.category.in(category));
+
+    const categories = [category].flat().filter(Boolean);
+
+    if (categories.length) {
+      query = query.where((challenge) => challenge.category.in(categories));
     }
 
     if (documentType) {
