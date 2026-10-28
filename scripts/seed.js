@@ -5,7 +5,7 @@ import contractJson from '../src/prisma/contract.json' with { type: 'json' };
 import { fileURLToPath } from 'node:url';
 
 const BCRYPT_SALT_ROUNDS = 10;
-const SEED_PASSWORD = 'password1234!';
+
 const CHALLENGES_PER_USER = 2;
 
 const ACTION_BY_STATUS = {
@@ -334,7 +334,13 @@ export class Seeder {
 
     console.log('시딩 시작');
 
-    this.#hashedPassword = await bcrypt.hash(SEED_PASSWORD, BCRYPT_SALT_ROUNDS);
+    const seedPassword = process.env.SEED_PASSWORD;
+
+    if (!seedPassword) {
+      throw new Error('SEED_PASSWORD 환경 변수가 설정되지 않았습니다.');
+    }
+
+    this.#hashedPassword = await bcrypt.hash(seedPassword, BCRYPT_SALT_ROUNDS);
 
     await this.#resetDb();
     console.log('데이터 초기화');
