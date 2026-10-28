@@ -322,7 +322,7 @@ export class Seeder {
       databaseUrl.hostname !==
         'dpg-dbg08259el5s73bga80g-a.singapore-postgres.render.com' ||
       databaseName !== 'nter' ||
-      databaseUrl.search !== '?sslmode=require'
+      databaseUrl.searchParams.get('sslmode') !== 'require'
     ) {
       throw new Error(
         '시딩 대상 DB가 허용된 조건과 일치하지 않습니다. DATABASE_URL을 확인해 주세요.',
