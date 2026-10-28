@@ -19,7 +19,7 @@ export class UserService {
     return user;
   }
 
-  async registreUser({ email, password, name }) {
+  async registerUser({ email, password, name }) {
     const hashedPassword = await this.#passwordProvider.hash(password);
     return await this.#userRepository.create({
       email,

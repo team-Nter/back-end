@@ -1,4 +1,4 @@
-import { BaseController } from '#controllers/base.controller.js';
+import { BaseController } from '../base.controller.js';
 import { HTTP_STATUS } from '#constants';
 import { validate } from '#middlewares';
 import { signUpSchema, loginSchema } from './dto/auth.dto.js';

@@ -2,12 +2,13 @@ import { config } from '#config';
 import { createContainer } from './common/di/container.js';
 import { App } from './app.js';
 import { setupGracefulShutdown } from './common/lifecycle/graceful-shutdown.js';
+import { EXIT_CODE } from '#constants';
 
 async function bootstrap() {
   const { controller, authMiddleware, db } = createContainer();
 
   const app = new App(controller, authMiddleware, config);
-  const server = app.listen(config.PORT);
+  const server = await app.listen(config.PORT);
 
   setupGracefulShutdown(server, db);
 }

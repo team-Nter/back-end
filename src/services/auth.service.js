@@ -40,13 +40,13 @@ export class AuthService {
       includePassword: true,
     });
 
-    if (!authUser) {
+    if (!authUser?.passwordHash) {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);
     }
 
     const isPasswordValid = await this.#passwordProvider.compare(
       password,
-      authUser.password,
+      authUser.passwordHash,
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);

@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from '#constants';
-import { BaseController } from '#controllers';
+import { BaseController } from '../base.controller.js';
 import { validate } from '#middlewares';
-import { createUserSchema, userIdParamSchema } from './dto/user-dto.js';
+import { createUserSchema, userIdParamSchema } from './dto/user.dto.js';
 
 export class UserController extends BaseController {
   #userService;

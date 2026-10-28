@@ -1,6 +1,5 @@
 import js from '@eslint/js';
 
-import importPlugin from 'eslint-plugin-import-x';
 export default [
   js.configs.recommended,
   {
@@ -12,9 +11,6 @@ export default [
         process: 'readonly',
         URL: 'readonly',
       },
-    },
-    plugins: {
-      import: importPlugin,
     },
     rules: {
       'no-unused-vars': [
@@ -28,7 +24,7 @@ export default [
       'no-console': 'off',
       'prefer-const': 'error',
       'no-var': 'error',
-      eqeqeq: 'error'
+      eqeqeq: 'error',
     },
   },
 ];
