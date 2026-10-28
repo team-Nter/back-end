@@ -10,9 +10,6 @@ export class SubmissionRepository {
     'createdAt',
     'updatedAt',
     'submittedAt',
-    'likes',
-    'feedbacks',
-    'notifications',
   ];
 
   constructor({ db }) {

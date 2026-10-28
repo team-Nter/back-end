@@ -2,15 +2,18 @@ import { BaseController } from './base.controller.js';
 
 export * from './auth/index.js';
 export * from './user/index.js';
+export * from './submission/index.js';
 
 export class Controller extends BaseController {
   #authController;
   #userController;
+  #submissionController;
 
-  constructor({ authController, userController }) {
+  constructor({ authController, userController, submissionController }) {
     super();
     this.#authController = authController;
     this.#userController = userController;
+    this.#submissionController = submissionController;
   }
 
   routes() {
@@ -18,7 +21,7 @@ export class Controller extends BaseController {
     this.router.use('/user', this.#userController.routes());
 
     this.router.get('/ping', (req, res) => this.ping(req, res));
-
+    this.router.use('/submission', this.#submissionController.routes());
     return this.router;
   }
 

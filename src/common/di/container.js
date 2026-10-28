@@ -1,14 +1,19 @@
 import { config } from '#config';
 import { db } from '#prisma/db.js';
-import { UserRepository } from '#repositories';
-import { AuthService, UserService } from '#services';
-import { AuthController, UserController, Controller } from '#controllers';
+import { SubmissionRepository, UserRepository } from '#repositories';
+import { AuthService, SubmissionService, UserService } from '#services';
+import {
+  AuthController,
+  UserController,
+  Controller,
+  SubmissionController,
+} from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware } from '#middlewares';
 
 export const createContainer = () => {
   const userRepository = new UserRepository({ db });
-
+  const submissionRepository = new SubmissionRepository({ db });
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
@@ -21,6 +26,9 @@ export const createContainer = () => {
   const userService = new UserService({
     userRepository,
     passwordProvider,
+  });
+  const submissionService = new SubmissionService({
+    submissionRepository,
   });
 
   const authMiddleware = new AuthMiddleware({
@@ -36,10 +44,14 @@ export const createContainer = () => {
   const userController = new UserController({
     userService,
   });
+  const submissionController = new SubmissionController({
+    submissionService,
+  });
 
   const controller = new Controller({
     authController,
     userController,
+    submissionController,
   });
 
   return { controller, db, authMiddleware };
