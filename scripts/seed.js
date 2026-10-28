@@ -317,12 +317,15 @@ export class Seeder {
     );
     const databaseName = decodeURIComponent(databaseUrl.pathname.slice(1));
 
+    const sslModes = databaseUrl.searchParams.getAll('sslmode');
+
     if (
       !protocolIsPostgreSql ||
       databaseUrl.hostname !==
         'dpg-dbg08259el5s73bga80g-a.singapore-postgres.render.com' ||
       databaseName !== 'nter' ||
-      databaseUrl.searchParams.get('sslmode') !== 'require'
+      sslModes.length !== 1 ||
+      +sslModes[0] !== 'require'
     ) {
       throw new Error(
         '시딩 대상 DB가 허용된 조건과 일치하지 않습니다. DATABASE_URL을 확인해 주세요.',
