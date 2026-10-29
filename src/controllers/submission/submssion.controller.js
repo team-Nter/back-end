@@ -19,6 +19,9 @@ export class SubmissionController extends BaseController {
     this.router.patch('/:submissionId', (req, res) =>
       this.updateSubmission(req, res),
     );
+    this.router.delete('/:submissionId', (req, res) =>
+      this.deleteSubmission(req, res),
+    );
 
     return this.router;
   }
@@ -53,6 +56,11 @@ export class SubmissionController extends BaseController {
   }
 
   async createSubmission(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다.');
+    }
+    // 참여자 확인 여부는 participation 쪽 완성 이후 작성 예정
+
     const { challengeId } = req.params;
     const { participationId, title, content } = req.body;
     const submission = await this.#submissionService.createSubmission(
@@ -80,5 +88,16 @@ export class SubmissionController extends BaseController {
     );
 
     res.status(HTTP_STATUS.OK).json(updateSubmission);
+  }
+
+  async deleteSubmission(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다');
+    }
+
+    const { submissionId } = req.params;
+
+    await this.#submissionService.deleteSubmission(submissionId, req.user.id);
+    res.status(HTTP_STATUS.NO_CONTENT).json();
   }
 }

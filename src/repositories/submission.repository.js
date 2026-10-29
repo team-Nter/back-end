@@ -19,10 +19,6 @@ export class SubmissionRepository {
   findById(id) {
     return this.#db.orm.public.Submission.where({ id: Number(id) })
       .select(...this.#fields)
-      .orderBy([
-        (submission) => submission.createdAt.desc(),
-        (submission) => submission.id.desc(),
-      ])
       .include('likes', (likes) => likes.count())
       .include('feedbacks', (feedbacks) => feedbacks.count())
       .include('participation', (participation) =>
@@ -39,6 +35,10 @@ export class SubmissionRepository {
       challengeId: Number(challengeId),
     })
       .select(...this.#fields)
+      .orderBy([
+        (submission) => submission.createdAt.desc(),
+        (submission) => submission.id.desc(),
+      ])
       .include('likes', (likes) => likes.count())
       .include('feedbacks', (feedbacks) => feedbacks.count())
       .include('participation', (participation) =>
@@ -73,4 +73,8 @@ export class SubmissionRepository {
       .update(data);
   }
   //delete
+
+  delete(id) {
+    return this.#db.orm.public.Submission.where({ id: Number(id) }).delete();
+  }
 }

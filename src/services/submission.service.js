@@ -128,4 +128,19 @@ export class SubmissionService {
 
     return submission;
   }
+
+  async deleteSubmission(submissionId, userId) {
+    const existingSubmission =
+      await this.#submissionRepository.findById(submissionId);
+    if (!existingSubmission) {
+      throw new NotFoundException('작업물을 찾을 수 없습니다');
+    }
+
+    const authorId = existingSubmission.participation?.user?.id;
+    if (authorId === undefined || authorId === null || authorId !== userId) {
+      throw new ForbiddenException('본인이 작성한 작업물만 삭제가 가능합니다');
+    }
+
+    await this.#submissionRepository.delete(submissionId);
+  }
 }

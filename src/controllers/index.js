@@ -23,7 +23,7 @@ export class Controller extends BaseController {
     this.router.get('/ping', (req, res) => this.ping(req, res));
     this.router.use('/submission', this.#submissionController.routes());
     this.router.use(
-      '/challenges/:challengeId/submissions',
+      '/challenges/:challengeId/submission',
       this.#submissionController.challengeRoutes(),
     );
     return this.router;
