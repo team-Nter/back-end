@@ -18,7 +18,7 @@ export class App {
     this.app.use(cookieParser());
     this.app.use(cors);
     this.app.use((req, res, next) =>
-      authMiddleware.authenticate(req, res, next),
+      authMiddleware.identifyUser(req, res, next),
     );
   }
 
