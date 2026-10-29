@@ -87,11 +87,34 @@ export class ChallengeService {
         '본인이 신청한 챌린지만 취소할 수 있습니다.',
       );
     }
-    throw new ConflictException('승인 전인 챌린지만 취소할 수 있습니다.');
+    if (challenge.status !== 'PENDING') {
+      throw new ConflictException('승인 전인 챌린지만 취소할 수 있습니다.');
+    }
+    throw new ConflictException(
+      '참여 이력이 있는 챌린지는 취소할 수 없습니다.',
+    );
   }
 
-  // async getAdminChallenges(query) {}
+  async getAdminChallenges(userId, type, { page, pageSize, keyword }) {
+    const typeFilters = MY_CHALLENGE_FILTERS[type](userId);
 
+    const filters = { ...typeFilters, keyword };
+
+    const [items, { total }] = await Promise.all([
+      this.#challengeRepository.findMany({ page, pageSize, ...filters }),
+      this.#challengeRepository.count(filters),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalCount: total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
   //async getAdminChallengeDetail(id) {}
 
   //async moderateChallenge(id, adminId, { action, reason }) {}

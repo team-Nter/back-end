@@ -89,6 +89,8 @@ export class ChallengeRepository {
   deleteByRequestor(id, requestorId) {
     return this.#orm()
       .Challenge.where({ id, requestorId, status: 'PENDING' })
+      .where((challenge) => challenge.participations.none())
+      .where((challenge) => challenge.submissions.none())
       .delete();
   }
 
