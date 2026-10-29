@@ -2,7 +2,11 @@ import express from 'express';
 
 export class BaseController {
   constructor() {
-    this.router = express.Router();
+    this.router = this.createRouter();
+  }
+
+  createRouter(options = {}) {
+    return express.Router(options);
   }
 
   routes() {

@@ -17,10 +17,30 @@ export class SubmissionController extends BaseController {
     return this.router;
   }
 
+  challengeRoutes() {
+    const router = this.createRouter({ mergeParams: true });
+
+    router.get('/', (req, res) => this.getSubmissions(req, res));
+
+    return router;
+  }
+
   async getSubmission(req, res) {
     const { submissionId } = req.params;
+
     const submission =
       await this.#submissionService.getSubmission(submissionId);
     res.status(HTTP_STATUS.OK).json(submission);
+  }
+
+  async getSubmissions(req, res) {
+    const { challengeId } = req.params;
+    const { page, pageSize } = req.query;
+    const submissions = await this.#submissionService.getSubmissions(
+      challengeId,
+      page,
+      pageSize,
+    );
+    res.status(HTTP_STATUS.OK).json(submissions);
   }
 }

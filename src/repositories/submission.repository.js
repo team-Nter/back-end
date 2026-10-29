@@ -26,11 +26,24 @@ export class SubmissionRepository {
           .select('id')
           .include('user', (user) => user.select('id', 'nickname', 'grade')),
       )
-
       .first();
   }
 
   // findByChallengeId
+  findByChallengeId(challengeId) {
+    return this.#db.orm.public.Submission.where({
+      challengeId: Number(challengeId),
+    })
+      .select(...this.#fields)
+      .include('likes', (likes) => likes.count())
+      .include('feedbacks', (feedbacks) => feedbacks.count())
+      .include('participation', (participation) =>
+        participation
+          .select('id')
+          .include('user', (user) => user.select('id', 'nickname', 'grade')),
+      )
+      .all();
+  }
 
   // create
 
