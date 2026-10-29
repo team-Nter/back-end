@@ -38,6 +38,9 @@ export class SubmissionService {
     if (!submissions) {
       throw new NotFoundException('작업물을 찾을 수 없습니다');
     }
+
+    page = Number(page);
+    pageSize = Number(pageSize);
     const totalCount = submissions.length;
     const totalPage = Math.ceil(totalCount / pageSize);
     const startIndex = (page - 1) * pageSize;
