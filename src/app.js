@@ -23,7 +23,7 @@ export class App {
   }
 
   routes(controller) {
-    this.app.use('/api', controller.routes());
+    this.app.use('/', controller.routes());
   }
 
   errorHandling() {
