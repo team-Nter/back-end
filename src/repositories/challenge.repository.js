@@ -1,3 +1,10 @@
+const SORTS = {
+  createAtDesc: (challenge) => challenge.createAt.desc(),
+  createAtAsc: (challenge) => challenge.createAt.asc(),
+  deadlineAsc: (challenge) => challenge.deadlinAt.asc(),
+  deadlineDesc: (challenge) => challenge.deadlineAt.desc(),
+};
+
 export class ChallengeRepository {
   #db;
   // 사용할 필드 목록을 재사용
@@ -35,12 +42,17 @@ export class ChallengeRepository {
   }
 
   //챌린지 목록(공개/관리자/내가 신청한/내가 참여한)
-  findMany({ page = 1, pageSize = 10, ...filters } = {}) {
+  findMany({
+    page = 1,
+    pageSize = 10,
+    sort = 'createAtDesc',
+    ...filters
+  } = {}) {
     return this.#buildListQuery(filters)
       .select(...this.#fields)
       .include('requestor', (requestor) => requestor.select('id', 'nickname'))
       .include('participations', (participations) => participations.count())
-      .orderBy((challenge) => challenge.createdAt.desc())
+      .orderBy([SORTS[sort], (challenge) => challenge.id.desc()])
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .all();

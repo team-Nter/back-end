@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '#exceptions';
+import { CHALLENGE_STATUES } from '#constants';
 
 const MY_CHALLENGE_FILTERS = {
   requested: (userId) => ({
@@ -98,8 +99,27 @@ export class ChallengeService {
     );
   }
 
-  //async getAdminChallenges(query) {}
+  async getAdminChallenges({ status, sort, page, pageSize, keyword }) {
+    const filters = {
+      statuses: status ? [status] : CHALLENGE_STATUES,
+      keyword,
+    };
 
+    const [items, { total }] = await Promise.all([
+      this.#challengeRepository.findMany({ page, pageSize, sort, ...filters }),
+      this.#challengeRepository.count(filters),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalCount: total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
   //async getAdminChallengeDetail(id) {}
 
   //async moderateChallenge(id, adminId, { action, reason }) {}

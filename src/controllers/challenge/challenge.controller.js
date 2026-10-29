@@ -82,4 +82,6 @@ export class ChallengeController extends BaseController {
     );
     res.status(HTTP_STATUS.NO_CONTENT).send();
   }
+
+  
 }
