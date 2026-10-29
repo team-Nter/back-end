@@ -23,12 +23,6 @@ export class UserRepository {
       .first();
   }
 
-  findRoleById(id) {
-    return this.#db.orm.public.User.where({ id: Number(id) })
-      .select('id', 'role')
-      .first();
-  }
-
   create(data) {
     return this.#db.orm.public.User.select(...this.#fields).create(data);
   }

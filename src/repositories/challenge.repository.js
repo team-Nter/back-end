@@ -60,14 +60,6 @@ export class ChallengeRepository {
       .create(data);
   }
 
-  // 챌린지 수정 (ADMIN)
-  update(id, data, { tx } = {}) {
-    return this.#orm(tx)
-      .Challenge.where({ id })
-      .select(...this.#fields)
-      .update(data);
-  }
-
   //본인 + 승인 대기일 때만 수정
   updateByRequestor(id, requestorId, data) {
     return this.#orm()
@@ -137,7 +129,7 @@ export class ChallengeRepository {
     }
 
     const now = new Date().toISOString();
-    if (state === 'progress') {
+    if (state === 'open') {
       query = query.where((challenge) => challenge.deadlineAt.gt(now));
     } else if (state === 'closed') {
       query = query.where((challenge) => challenge.deadlineAt.lte(now));

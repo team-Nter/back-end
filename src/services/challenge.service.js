@@ -12,7 +12,7 @@ const MY_CHALLENGE_FILTERS = {
   participating: (userId) => ({
     participantUserId: userId,
     statuses: ['APPROVED'],
-    state: 'progress',
+    state: 'open',
   }),
   completed: (userId) => ({
     participantUserId: userId,
