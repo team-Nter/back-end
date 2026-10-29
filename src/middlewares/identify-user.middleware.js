@@ -9,7 +9,7 @@ export class AuthMiddleware {
     this.#cookieProvider = cookieProvider;
   }
 
-  async authenticate(req, res, next) {
+  async identifyUser(req, res, next) {
     try {
       const { accessToken, refreshToken } = req.cookies;
 
