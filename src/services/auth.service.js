@@ -55,7 +55,7 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);
     }
 
-    const user = await this.#userRepository.findById(authUser.id);
+    const user = await this.#userRepository.findByIdWithAuthFields(authUser.id);
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGE.USER_NOT_FOUND);
     }
@@ -66,7 +66,7 @@ export class AuthService {
   }
 
   async getMe(userId) {
-    const user = await this.#userRepository.findById(userId);
+    const user = await this.#userRepository.findByIdWithAuthFields(userId);
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGE.USER_NOT_FOUND);
     }
@@ -80,7 +80,9 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_TOKEN);
     }
 
-    const user = await this.#userRepository.findById(payload.userId);
+    const user = await this.#userRepository.findByIdWithAuthFields(
+      payload.userId,
+    );
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGE.USER_NOT_FOUND_FROM_TOKEN);
     }

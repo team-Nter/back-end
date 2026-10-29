@@ -1,7 +1,7 @@
 export class UserRepository {
   #db;
-  // 사용할 필드 목록을 재사용
-  #fields = [
+  // 인증 및 내부 처리용 필드
+  #userFields = [
     'id',
     'email',
     'nickname',
@@ -11,20 +11,29 @@ export class UserRepository {
     'createdAt',
   ];
 
+  // 공개 사용자 조회용 필드
+  #publicFields = ['id', 'nickname', 'grade', 'createdAt'];
+
   constructor({ db }) {
     this.#db = db;
   }
 
   findById(id) {
     return this.#db.orm.public.User.where({ id: Number(id) })
-      .select(...this.#fields)
+      .select(...this.#publicFields)
+      .first();
+  }
+
+  findByIdWithAuthFields(id) {
+    return this.#db.orm.public.User.where({ id: Number(id) })
+      .select(...this.#userFields)
       .first();
   }
 
   findByEmail(email, { includePassword = false } = {}) {
     const fields = includePassword
-      ? [...this.#fields, 'passwordHash']
-      : this.#fields;
+      ? [...this.#userFields, 'passwordHash']
+      : this.#userFields;
 
     return this.#db.orm.public.User.where({ email })
       .select(...fields)
@@ -32,6 +41,6 @@ export class UserRepository {
   }
 
   create(data) {
-    return this.#db.orm.public.User.select(...this.#fields).create(data);
+    return this.#db.orm.public.User.select(...this.#userFields).create(data);
   }
 }
