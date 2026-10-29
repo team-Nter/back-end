@@ -80,7 +80,10 @@ export class SubmissionService {
 
   async createSubmission(challengeId, data) {
     // TODO: 실험용 body 입력 대신 로그인 사용자의 참여 기록으로 검증·대체
-    const submission = await this.#submissionRepository.create(challengeId, data);
+    const submission = await this.#submissionRepository.create(
+      challengeId,
+      data,
+    );
 
     if (!submission) {
       throw new Error('작업물 생성에 실패했습니다');
@@ -100,5 +103,14 @@ export class SubmissionService {
           }
         : null,
     };
+  }
+
+  async updateSubmission(submissionId, data) {
+    const submission = this.#submissionRepository.update(submissionId, data);
+    if (!submission) {
+      throw new Error('작업물 수정에 실패했습니다.');
+    }
+
+    return submission;
   }
 }

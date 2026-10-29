@@ -66,5 +66,11 @@ export class SubmissionRepository {
       });
   }
   // update
+
+  update(id, data) {
+    return this.#db.orm.public.Submission.where({ id: Number(id) })
+      .select(...this.#fields)
+      .update(data);
+  }
   //delete
 }

@@ -15,6 +15,9 @@ export class SubmissionController extends BaseController {
     this.router.get('/:submissionId', (req, res) =>
       this.getSubmission(req, res),
     );
+    this.router.patch('/:submissionId', (req, res) =>
+      this.updateSubmission(req, res),
+    );
 
     return this.router;
   }
@@ -60,5 +63,16 @@ export class SubmissionController extends BaseController {
       },
     );
     res.status(HTTP_STATUS.CREATED).json(submission);
+  }
+
+  async updateSubmission(req, res) {
+    const { submissionId } = req.params;
+    const { title, content } = req.body;
+    const updateSubmission = await this.#submissionService.updateSubmission(
+      submissionId,
+      { title, content },
+    );
+
+    res.status(HTTP_STATUS.OK).json(updateSubmission);
   }
 }
