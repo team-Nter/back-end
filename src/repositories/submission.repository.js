@@ -30,7 +30,7 @@ export class SubmissionRepository {
   }
 
   // findByChallengeId
-  findByChallengeId(challengeId) {
+  findByChallengeId(challengeId, { offset, limit }) {
     return this.#db.orm.public.Submission.where({
       challengeId: Number(challengeId),
     })
@@ -39,6 +39,8 @@ export class SubmissionRepository {
         (submission) => submission.createdAt.desc(),
         (submission) => submission.id.desc(),
       ])
+      .offset(offset)
+      .limit(limit)
       .include('likes', (likes) => likes.count())
       .include('feedbacks', (feedbacks) => feedbacks.count())
       .include('participation', (participation) =>
@@ -47,6 +49,13 @@ export class SubmissionRepository {
           .include('user', (user) => user.select('id', 'nickname', 'grade')),
       )
       .all();
+  }
+
+  async countByChallengeId(challengeId) {
+    const { totalCount } = await this.#db.orm.public.Submission.where({
+      challengeId: Number(challengeId),
+    }).aggregate((aggregate) => ({ totalCount: aggregate.count() }));
+    return totalCount;
   }
 
   // create

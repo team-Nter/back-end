@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '#exceptions';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '#exceptions';
 
 export class SubmissionService {
   #submissionRepository;
@@ -33,41 +37,52 @@ export class SubmissionService {
   }
 
   async getSubmissions(challengeId, page = 1, pageSize = 1) {
-    const submissions =
-      await this.#submissionRepository.findByChallengeId(challengeId);
-    if (!submissions) {
-      throw new NotFoundException('작업물을 찾을 수 없습니다');
-    }
-
+    // 관련 사항들은 차후 validate 쪽에 들어갈 것.
     page = Number(page);
     pageSize = Number(pageSize);
-    const totalCount = submissions.length;
+    const offset = (page - 1) * pageSize;
+    if (
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      !Number.isSafeInteger(pageSize) ||
+      pageSize < 1 ||
+      !Number.isSafeInteger(offset)
+    ) {
+      throw new BadRequestException(
+        '페이지와 페이지 크기는 유효한 양의 정수여야 합니다',
+      );
+    }
+
+    const [submissions, totalCount] = await Promise.all([
+      this.#submissionRepository.findByChallengeId(challengeId, {
+        offset,
+        limit: pageSize,
+      }),
+      this.#submissionRepository.countByChallengeId(challengeId),
+    ]);
     const totalPage = Math.ceil(totalCount / pageSize);
-    const startIndex = (page - 1) * pageSize;
 
-    const items = submissions
-      .slice(startIndex, startIndex + pageSize)
-      .map((submission) => {
-        const user = submission.participation.user;
+    const items = submissions.map((submission) => {
+      const user = submission.participation.user;
 
-        return {
-          id: submission.id,
-          challengeId: submission.challengeId,
-          title: submission.title,
-          isSelected: submission.isSelected,
-          createdAt: submission.createdAt,
-          updatedAt: submission.updatedAt,
-          author: user
-            ? {
-                id: user.id,
-                nickname: user.nickname,
-                grade: user.grade,
-              }
-            : null,
-          likeCount: submission.likes,
-          feedbackCount: submission.feedbacks,
-        };
-      });
+      return {
+        id: submission.id,
+        challengeId: submission.challengeId,
+        title: submission.title,
+        isSelected: submission.isSelected,
+        createdAt: submission.createdAt,
+        updatedAt: submission.updatedAt,
+        author: user
+          ? {
+              id: user.id,
+              nickname: user.nickname,
+              grade: user.grade,
+            }
+          : null,
+        likeCount: submission.likes,
+        feedbackCount: submission.feedbacks,
+      };
+    });
 
     const pagination = {
       page,
