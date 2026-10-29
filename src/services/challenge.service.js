@@ -64,10 +64,13 @@ export class ChallengeService {
     }
 
     const isPending = challenge.status === 'PENDING';
+    const hasActivity =
+      challenge.participations > 0 || challenge.submissions > 0;
+
     return {
       ...challenge,
       canEdit: isPending,
-      canCancel: isPending,
+      canCancel: isPending && !hasActivity,
     };
   }
 
@@ -95,26 +98,8 @@ export class ChallengeService {
     );
   }
 
-  async getAdminChallenges(userId, type, { page, pageSize, keyword }) {
-    const typeFilters = MY_CHALLENGE_FILTERS[type](userId);
+  //async getAdminChallenges(query) {}
 
-    const filters = { ...typeFilters, keyword };
-
-    const [items, { total }] = await Promise.all([
-      this.#challengeRepository.findMany({ page, pageSize, ...filters }),
-      this.#challengeRepository.count(filters),
-    ]);
-
-    return {
-      items,
-      pagination: {
-        page,
-        pageSize,
-        totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    };
-  }
   //async getAdminChallengeDetail(id) {}
 
   //async moderateChallenge(id, adminId, { action, reason }) {}
