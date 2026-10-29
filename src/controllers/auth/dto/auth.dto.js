@@ -21,10 +21,5 @@ export const loginSchema = z.object({
   email: z.email('유효한 이메일 형식이 아닙니다.'),
   password: z
     .string({ error: '비밀번호는 필수입니다.' })
-    .min(1, '비밀번호를 입력해주세요.')
-    .max(24, '비밀번호는 24자 이하여야 합니다.')
-    .refine(
-      (password) => Buffer.byteLength(password, 'utf8') <= 72,
-      '비밀번호는 UTF-8 기준 72바이트 이하여야 합니다.',
-    ),
+    .min(1, '비밀번호를 입력해주세요.'),
 });
