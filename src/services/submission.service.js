@@ -77,4 +77,28 @@ export class SubmissionService {
     };
     return { items, pagination };
   }
+
+  async createSubmission(challengeId, data) {
+    // TODO: 실험용 body 입력 대신 로그인 사용자의 참여 기록으로 검증·대체
+    const submission = await this.#submissionRepository.create(challengeId, data);
+
+    if (!submission) {
+      throw new Error('작업물 생성에 실패했습니다');
+    }
+
+    const { participation, ...rest } = submission;
+
+    const user = participation.user;
+
+    return {
+      ...rest,
+      author: user
+        ? {
+            id: user.id,
+            nickname: user.nickname,
+            grade: user.grade,
+          }
+        : null,
+    };
+  }
 }

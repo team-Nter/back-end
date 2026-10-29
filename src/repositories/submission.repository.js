@@ -50,7 +50,21 @@ export class SubmissionRepository {
   }
 
   // create
-
+  create(challengeId, data) {
+    return this.#db.orm.public.Submission.select(...this.#fields)
+      .include('participation', (participation) =>
+        participation
+          .select('id')
+          .include('user', (user) => user.select('id', 'nickname', 'grade')),
+      )
+      .create({
+        challengeId: Number(challengeId),
+        participationId: data.participationId,
+        title: data.title,
+        content: data.content,
+        submittedAt: new Date().toISOString(),
+      });
+  }
   // update
   //delete
 }

@@ -1,5 +1,7 @@
 import { HTTP_STATUS } from '#constants';
+import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
+import { submissionSchema } from './dto/submission.dto.js';
 
 export class SubmissionController extends BaseController {
   #submissionService;
@@ -21,7 +23,9 @@ export class SubmissionController extends BaseController {
     const router = this.createRouter({ mergeParams: true });
 
     router.get('/', (req, res) => this.getSubmissions(req, res));
-
+    router.post('/', validate('body', submissionSchema), (req, res) =>
+      this.createSubmission(req, res),
+    );
     return router;
   }
 
@@ -42,5 +46,19 @@ export class SubmissionController extends BaseController {
       pageSize,
     );
     res.status(HTTP_STATUS.OK).json(submissions);
+  }
+
+  async createSubmission(req, res) {
+    const { challengeId } = req.params;
+    const { participationId, title, content } = req.body;
+    const submission = await this.#submissionService.createSubmission(
+      challengeId,
+      {
+        participationId,
+        title,
+        content,
+      },
+    );
+    res.status(HTTP_STATUS.CREATED).json(submission);
   }
 }
