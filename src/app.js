@@ -22,12 +22,12 @@ export class App {
     );
   }
 
-  errorHandling() {
-    this.app.use(errorHandler);
-  }
-
   routes(controller) {
     this.app.use('/api', controller.routes());
+  }
+
+  errorHandling() {
+    this.app.use(errorHandler);
   }
 
   listen(port) {

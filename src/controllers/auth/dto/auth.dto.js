@@ -5,7 +5,7 @@ export const signUpSchema = z.object({
   password: z
     .string({ error: '비밀번호는 필수입니다.' })
     .min(4, '비밀번호는 4자 이상이어야 합니다.'),
-  name: z.string().min(2, '이름은 2자 이상이어야 합니다.'),
+  nickname: z.string().min(2, '이름은 2자 이상이어야 합니다.'),
 });
 
 export const loginSchema = z.object({

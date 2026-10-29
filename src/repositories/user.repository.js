@@ -1,7 +1,15 @@
 export class UserRepository {
   #db;
   // 사용할 필드 목록을 재사용
-  #fields = ['id', 'email'];
+  #fields = [
+    'id',
+    'email',
+    'nickname',
+    'role',
+    'grade',
+    'provider',
+    'createdAt',
+  ];
 
   constructor({ db }) {
     this.#db = db;
