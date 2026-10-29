@@ -1,1 +1,1 @@
-export * from './submssion.controller.js';
+export * from './submission.controller.js';
