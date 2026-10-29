@@ -1,4 +1,5 @@
 import { HTTP_STATUS } from '#constants';
+import { UnauthorizedException } from '#exceptions';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
 import { submissionSchema } from './dto/submission.dto.js';
@@ -66,10 +67,15 @@ export class SubmissionController extends BaseController {
   }
 
   async updateSubmission(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다.');
+    }
+
     const { submissionId } = req.params;
     const { title, content } = req.body;
     const updateSubmission = await this.#submissionService.updateSubmission(
       submissionId,
+      req.user.id,
       { title, content },
     );
 

@@ -1,4 +1,4 @@
-import { NotFoundException } from '#exceptions';
+import { ForbiddenException, NotFoundException } from '#exceptions';
 
 export class SubmissionService {
   #submissionRepository;
@@ -105,8 +105,23 @@ export class SubmissionService {
     };
   }
 
-  async updateSubmission(submissionId, data) {
-    const submission = this.#submissionRepository.update(submissionId, data);
+  async updateSubmission(submissionId, userId, data) {
+    const existingSubmission =
+      await this.#submissionRepository.findById(submissionId);
+
+    if (!existingSubmission) {
+      throw new NotFoundException('작업물을 찾을 수 없습니다');
+    }
+
+    const authorId = existingSubmission.participation?.user?.id;
+    if (authorId === undefined || authorId === null || authorId !== userId) {
+      throw new ForbiddenException('본인이 작성한 작업물만 수정이 가능합니다');
+    }
+
+    const submission = await this.#submissionRepository.update(
+      submissionId,
+      data,
+    );
     if (!submission) {
       throw new Error('작업물 수정에 실패했습니다.');
     }
