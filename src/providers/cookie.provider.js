@@ -28,7 +28,13 @@ export class CookieProvider {
   }
 
   clearAuthCookies(res) {
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('accessToken', {
+      secure: this.#isProduction,
+      path: '/',
+    });
+    res.clearCookie('refreshToken', {
+      secure: this.#isProduction,
+      path: '/',
+    });
   }
 }

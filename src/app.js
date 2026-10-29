@@ -18,16 +18,16 @@ export class App {
     this.app.use(cookieParser());
     this.app.use(cors);
     this.app.use((req, res, next) =>
-      authMiddleware.authenticate(req, res, next),
+      authMiddleware.identifyUser(req, res, next),
     );
+  }
+
+  routes(controller) {
+    this.app.use('/', controller.routes());
   }
 
   errorHandling() {
     this.app.use(errorHandler);
-  }
-
-  routes(controller) {
-    this.app.use('/api', controller.routes());
   }
 
   listen(port) {
