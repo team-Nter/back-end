@@ -13,6 +13,15 @@ export class FeedbackController extends BaseController {
   }
 
   routes() {
+    this.router.patch(
+      '/:feedbackId',
+      validate('body', createFeedbackSchema),
+      (req, res) => this.updateFeedback(req, res),
+    );
+    return this.router;
+  }
+
+  submissionRoutes() {
     const router = this.createRouter({ mergeParams: true });
     router.get('/', (req, res) => this.getFeedbacks(req, res));
     router.post('/', validate('body', createFeedbackSchema), (req, res) =>
@@ -49,5 +58,21 @@ export class FeedbackController extends BaseController {
     );
 
     return res.status(HTTP_STATUS.CREATED).json(feedback);
+  }
+
+  async updateFeedback(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다.');
+    }
+    const { feedbackId } = req.params;
+    const { content } = req.body;
+
+    const feedback = await this.#feedbackService.updateFeedback(
+      feedbackId,
+      req.user.id,
+      content,
+    );
+
+    return res.status(HTTP_STATUS.OK).json(feedback);
   }
 }

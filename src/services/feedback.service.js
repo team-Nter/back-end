@@ -1,4 +1,8 @@
-import { BadRequestException } from '#exceptions';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '#exceptions';
 
 export class FeedbackService {
   #feedbackRepository;
@@ -49,5 +53,19 @@ export class FeedbackService {
       authorId,
       content,
     );
+  }
+
+  async updateFeedback(feedbackId, userId, content) {
+    const feedback = await this.#feedbackRepository.findById(feedbackId);
+    if (!feedback) {
+      throw new NotFoundException('피드백을 찾을 수 없습니다');
+    }
+
+    if (feedback.authorId !== userId) {
+      throw new ForbiddenException(
+        '본인이 작성한 피드백만 수정할 수 있습니다.',
+      );
+    }
+    return await this.#feedbackRepository.update(feedbackId, content);
   }
 }
