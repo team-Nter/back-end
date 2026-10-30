@@ -8,4 +8,12 @@ export class FeedbackService {
   async getFeedbacks(submissionId) {
     return await this.#feedbackRepository.findAll(submissionId);
   }
+
+  async createFeedback(submissionId, authorId, content) {
+    return await this.#feedbackRepository.create(
+      submissionId,
+      authorId,
+      content,
+    );
+  }
 }
