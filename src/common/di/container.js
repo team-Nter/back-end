@@ -10,10 +10,12 @@ import {
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
+import { ModerationLogRepository } from '../../repositories/moderation-log.repository.js';
 
 export const createContainer = () => {
   const userRepository = new UserRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
+  const moderationLogRepository = new ModerationLogRepository({ db });
 
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
@@ -29,7 +31,10 @@ export const createContainer = () => {
     passwordProvider,
   });
 
-  const challengeService = new ChallengeService({ challengeRepository });
+  const challengeService = new ChallengeService({
+    challengeRepository,
+    moderationLogRepository,
+  });
 
   const authMiddleware = new AuthMiddleware({
     tokenProvider,

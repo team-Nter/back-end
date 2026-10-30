@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { CHALLENGE_CATEGORIES, DOCUMENT_TYPES } from '#constants';
+import {
+  CHALLENGE_CATEGORIES,
+  DOCUMENT_TYPES,
+  CHALLENGE_STATUSES,
+  ADMIN_CHALLENGE_SORTS,
+} from '#constants';
 
 export const createChallengeSchema = z.object({
   title: z
@@ -54,3 +59,27 @@ export const myChallengeListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
   keyword: z.string().trim().optional(),
 });
+
+export const adminChallengeListQuerySchema = z.object({
+  status: z
+    .enum(CHALLENGE_STATUSES, {
+      error:
+        'status는 PENDING, APPROVED, REJECTED, CANCELED 중 하나여야 합니다.',
+    })
+    .optional(),
+  sort: z
+    .enum(ADMIN_CHALLENGE_SORTS, {
+      error:
+        'sort는 createdAtDesc, createdAtAsc, deadlineAsc, deadlineDesc 중 하나여야 합니다.',
+    })
+    .default('createdAtDesc'),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  keyword: z.string().trim().optional(),
+});
+
+export const adminChallengeDetailQuerySchema =
+  adminChallengeListQuerySchema.omit({
+    page: true,
+    pageSize: true,
+  });

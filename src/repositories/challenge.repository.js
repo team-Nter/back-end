@@ -1,8 +1,8 @@
-const SORTS = {
-  createAtDesc: (challenge) => challenge.createAt.desc(),
-  createAtAsc: (challenge) => challenge.createAt.asc(),
-  deadlineAsc: (challenge) => challenge.deadlinAt.asc(),
-  deadlineDesc: (challenge) => challenge.deadlineAt.desc(),
+const SORT_KEYS = {
+  createdAtDesc: { field: 'createdAt', dir: 'desc' },
+  createdAtAsc: { field: 'createdAt', dir: 'asc' },
+  deadlineAsc: { field: 'deadlineAt', dir: 'asc' },
+  deadlineDesc: { field: 'deadlineAt', dir: 'desc' },
 };
 
 export class ChallengeRepository {
@@ -45,14 +45,18 @@ export class ChallengeRepository {
   findMany({
     page = 1,
     pageSize = 10,
-    sort = 'createAtDesc',
+    sort = 'createdAtDesc',
     ...filters
   } = {}) {
+    const { field, dir } = SORT_KEYS[sort];
     return this.#buildListQuery(filters)
       .select(...this.#fields)
       .include('requestor', (requestor) => requestor.select('id', 'nickname'))
       .include('participations', (participations) => participations.count())
-      .orderBy([SORTS[sort], (challenge) => challenge.id.desc()])
+      .orderBy([
+        (challenge) => challenge[field][dir](),
+        (challenge) => challenge.id.desc(),
+      ])
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .all();
@@ -65,19 +69,55 @@ export class ChallengeRepository {
     }));
   }
 
+  //어드민 상세의 이전/다음
+  async findAdjacentIds(current, filters, sort = 'createdAtDesc') {
+    const [prevId, nextId] = await Promise.all([
+      this.#findNeighborId(current, filters, sort, 'prev'),
+      this.#findNeighborId(current, filters, sort, 'next'),
+    ]);
+
+    return { prevId, nextId };
+  }
+
+  async #findNeighborId(current, filters, sort, direction) {
+    const { field, dir } = SORT_KEYS[sort];
+    const forward = direction === 'next';
+    const value = current[field];
+
+    const tie = await this.#buildListQuery(filters)
+      .where({ [field]: value })
+      .where((challenge) =>
+        forward ? challenge.id.lt(current.id) : challenge.id.gt(current.id),
+      )
+      .orderBy([
+        (challenge) => (forward ? challenge.id.desc() : challenge.id.asc()),
+      ])
+      .select('id')
+      .first();
+    if (tie) return tie.id;
+
+    const isGreater = forward === (dir === 'asc');
+    const reverseDir = dir === 'asc' ? 'desc' : 'asc';
+
+    const neighbor = await this.#buildListQuery(filters)
+      .where((challenge) =>
+        isGreater ? challenge[field].gt(value) : challenge[field].lt(value),
+      )
+      .orderBy([
+        (challenge) => challenge[field][forward ? dir : reverseDir](),
+        (challenge) => (forward ? challenge.id.desc() : challenge.id.asc()),
+      ])
+      .select('id')
+      .first();
+
+    return neighbor?.id ?? null;
+  }
+
   //챌린지 신청
   create(data) {
     return this.#orm()
       .Challenge.select(...this.#fields)
       .create(data);
-  }
-
-  // 챌린지 수정 (ADMIN)
-  update(id, data, { tx } = {}) {
-    return this.#orm(tx)
-      .Challenge.where({ id })
-      .select(...this.#fields)
-      .update(data);
   }
 
   //본인 + 승인 대기일 때만 수정
