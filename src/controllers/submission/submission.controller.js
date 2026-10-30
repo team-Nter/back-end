@@ -1,0 +1,108 @@
+import { HTTP_STATUS } from '#constants';
+import { UnauthorizedException } from '#exceptions';
+import { validate } from '#middlewares';
+import { BaseController } from '../base.controller.js';
+import {
+  submissionSchema,
+  updateSubmissionSchema,
+} from './dto/submission.dto.js';
+
+export class SubmissionController extends BaseController {
+  #submissionService;
+
+  constructor({ submissionService }) {
+    super();
+    this.#submissionService = submissionService;
+  }
+
+  routes() {
+    this.router.get('/:submissionId', (req, res) =>
+      this.getSubmission(req, res),
+    );
+    this.router.patch(
+      '/:submissionId',
+      validate('body', updateSubmissionSchema),
+      (req, res) => this.updateSubmission(req, res),
+    );
+    this.router.delete('/:submissionId', (req, res) =>
+      this.deleteSubmission(req, res),
+    );
+
+    return this.router;
+  }
+
+  challengeRoutes() {
+    const router = this.createRouter({ mergeParams: true });
+
+    router.get('/', (req, res) => this.getSubmissions(req, res));
+    router.post('/', validate('body', submissionSchema), (req, res) =>
+      this.createSubmission(req, res),
+    );
+    return router;
+  }
+
+  async getSubmission(req, res) {
+    const { submissionId } = req.params;
+
+    const submission =
+      await this.#submissionService.getSubmission(submissionId);
+    res.status(HTTP_STATUS.OK).json(submission);
+  }
+
+  async getSubmissions(req, res) {
+    const { challengeId } = req.params;
+    const { page, pageSize } = req.query;
+    const submissions = await this.#submissionService.getSubmissions(
+      challengeId,
+      page,
+      pageSize,
+    );
+    res.status(HTTP_STATUS.OK).json(submissions);
+  }
+
+  async createSubmission(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다.');
+    }
+    // 참여자 확인 여부는 participation 쪽 완성 이후 작성 예정
+
+    const { challengeId } = req.params;
+    const { participationId, title, content } = req.body;
+    const submission = await this.#submissionService.createSubmission(
+      challengeId,
+      {
+        participationId,
+        title,
+        content,
+      },
+    );
+    res.status(HTTP_STATUS.CREATED).json(submission);
+  }
+
+  async updateSubmission(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다.');
+    }
+
+    const { submissionId } = req.params;
+    const { title, content } = req.body;
+    const updateSubmission = await this.#submissionService.updateSubmission(
+      submissionId,
+      req.user.id,
+      { title, content },
+    );
+
+    res.status(HTTP_STATUS.OK).json(updateSubmission);
+  }
+
+  async deleteSubmission(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다');
+    }
+
+    const { submissionId } = req.params;
+
+    await this.#submissionService.deleteSubmission(submissionId, req.user.id);
+    res.status(HTTP_STATUS.NO_CONTENT).json();
+  }
+}
