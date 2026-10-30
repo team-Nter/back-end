@@ -46,6 +46,7 @@ export class SubmissionService {
       page < 1 ||
       !Number.isSafeInteger(pageSize) ||
       pageSize < 1 ||
+      pageSize > 100 ||
       !Number.isSafeInteger(offset)
     ) {
       throw new BadRequestException(
