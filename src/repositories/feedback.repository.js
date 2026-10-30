@@ -44,6 +44,10 @@ export class FeedbackRepository {
       .update({ content });
   }
 
+  delete(id) {
+    return this.#db.orm.public.Feedback.where({ id: Number(id) }).delete();
+  }
+
   async countFeedbacks(submissionId) {
     const { totalCount } = await this.#db.orm.public.Feedback.where({
       submissionId: Number(submissionId),

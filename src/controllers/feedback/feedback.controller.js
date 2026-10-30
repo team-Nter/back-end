@@ -18,6 +18,9 @@ export class FeedbackController extends BaseController {
       validate('body', createFeedbackSchema),
       (req, res) => this.updateFeedback(req, res),
     );
+    this.router.delete('/:feedbackId', (req, res) =>
+      this.deleteFeedback(req, res),
+    );
     return this.router;
   }
 
@@ -74,5 +77,14 @@ export class FeedbackController extends BaseController {
     );
 
     return res.status(HTTP_STATUS.OK).json(feedback);
+  }
+
+  async deleteFeedback(req, res) {
+    if (!req.user) {
+      throw new UnauthorizedException('로그인이 필요합니다');
+    }
+    const { feedbackId } = req.params;
+    await this.#feedbackService.deleteFeedback(feedbackId, req.user.id);
+    return res.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }
