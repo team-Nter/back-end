@@ -15,17 +15,21 @@ export class FeedbackController extends BaseController {
   routes() {
     const router = this.createRouter({ mergeParams: true });
     router.get('/', (req, res) => this.getFeedbacks(req, res));
-    router.post(
-      '/',
-      validate('body', createFeedbackSchema),
-      (req, res) => this.createFeedback(req, res),
+    router.post('/', validate('body', createFeedbackSchema), (req, res) =>
+      this.createFeedback(req, res),
     );
     return router;
   }
 
   async getFeedbacks(req, res) {
     const { submissionId } = req.params;
-    const feedbacks = await this.#feedbackService.getFeedbacks(submissionId);
+    const { page, pageSize } = req.query;
+
+    const feedbacks = await this.#feedbackService.getFeedbacks(
+      submissionId,
+      page,
+      pageSize,
+    );
 
     res.status(HTTP_STATUS.OK).json(feedbacks);
   }
