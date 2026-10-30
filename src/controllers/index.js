@@ -2,21 +2,27 @@ import { BaseController } from './base.controller.js';
 
 export * from './auth/index.js';
 export * from './user/index.js';
+export * from './participation/index.js';
 
 export class Controller extends BaseController {
   #authController;
   #userController;
+  #participationController;
 
-  constructor({ authController, userController }) {
+  constructor({ authController, userController, participationController }) {
     super();
     this.#authController = authController;
     this.#userController = userController;
+    this.#participationController = participationController;
   }
 
   routes() {
     this.router.use('/auth', this.#authController.routes());
     this.router.use('/user', this.#userController.routes());
-
+    this.router.use(
+      '/challenges/:challengeId/participants',
+      this.#participationController.routes(),
+    );
     this.router.get('/ping', (req, res) => this.ping(req, res));
 
     return this.router;
