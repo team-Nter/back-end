@@ -2,7 +2,10 @@ import { HTTP_STATUS } from '#constants';
 import { UnauthorizedException } from '#exceptions';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
-import { submissionSchema } from './dto/submission.dto.js';
+import {
+  submissionSchema,
+  updateSubmissionSchema,
+} from './dto/submission.dto.js';
 
 export class SubmissionController extends BaseController {
   #submissionService;
@@ -16,8 +19,10 @@ export class SubmissionController extends BaseController {
     this.router.get('/:submissionId', (req, res) =>
       this.getSubmission(req, res),
     );
-    this.router.patch('/:submissionId', (req, res) =>
-      this.updateSubmission(req, res),
+    this.router.patch(
+      '/:submissionId',
+      validate('body', updateSubmissionSchema),
+      (req, res) => this.updateSubmission(req, res),
     );
     this.router.delete('/:submissionId', (req, res) =>
       this.deleteSubmission(req, res),

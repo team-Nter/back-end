@@ -12,3 +12,10 @@ export const submissionSchema = z.object({
     .string({ error: '내용은 필수입니다.' })
     .refine((content) => content.trim().length > 0, '내용은 필수입니다.'),
 });
+
+export const updateSubmissionSchema = submissionSchema
+  .pick({ title: true, content: true })
+  .partial()
+  .refine((v) => v.title !== undefined || v.content !== undefined, {
+    message: '수정할 내용이 필요합니다.',
+  });
