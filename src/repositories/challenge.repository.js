@@ -1,3 +1,10 @@
+const SORT_KEYS = {
+  createdAtDesc: { field: 'createdAt', dir: 'desc' },
+  createdAtAsc: { field: 'createdAt', dir: 'asc' },
+  deadlineAsc: { field: 'deadlineAt', dir: 'asc' },
+  deadlineDesc: { field: 'deadlineAt', dir: 'desc' },
+};
+
 export class ChallengeRepository {
   #db;
   // 사용할 필드 목록을 재사용
@@ -35,12 +42,21 @@ export class ChallengeRepository {
   }
 
   //챌린지 목록(공개/관리자/내가 신청한/내가 참여한)
-  findMany({ page = 1, pageSize = 10, ...filters } = {}) {
+  findMany({
+    page = 1,
+    pageSize = 10,
+    sort = 'createdAtDesc',
+    ...filters
+  } = {}) {
+    const { field, dir } = SORT_KEYS[sort];
     return this.#buildListQuery(filters)
       .select(...this.#fields)
       .include('requestor', (requestor) => requestor.select('id', 'nickname'))
       .include('participations', (participations) => participations.count())
-      .orderBy((challenge) => challenge.createdAt.desc())
+      .orderBy([
+        (challenge) => challenge[field][dir](),
+        (challenge) => challenge.id.desc(),
+      ])
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .all();
@@ -53,6 +69,50 @@ export class ChallengeRepository {
     }));
   }
 
+  //어드민 상세의 이전/다음
+  async findAdjacentIds(current, filters, sort = 'createdAtDesc') {
+    const [prevId, nextId] = await Promise.all([
+      this.#findNeighborId(current, filters, sort, 'prev'),
+      this.#findNeighborId(current, filters, sort, 'next'),
+    ]);
+
+    return { prevId, nextId };
+  }
+
+  async #findNeighborId(current, filters, sort, direction) {
+    const { field, dir } = SORT_KEYS[sort];
+    const forward = direction === 'next';
+    const value = current[field];
+
+    const tie = await this.#buildListQuery(filters)
+      .where({ [field]: value })
+      .where((challenge) =>
+        forward ? challenge.id.lt(current.id) : challenge.id.gt(current.id),
+      )
+      .orderBy([
+        (challenge) => (forward ? challenge.id.desc() : challenge.id.asc()),
+      ])
+      .select('id')
+      .first();
+    if (tie) return tie.id;
+
+    const isGreater = forward === (dir === 'asc');
+    const reverseDir = dir === 'asc' ? 'desc' : 'asc';
+
+    const neighbor = await this.#buildListQuery(filters)
+      .where((challenge) =>
+        isGreater ? challenge[field].gt(value) : challenge[field].lt(value),
+      )
+      .orderBy([
+        (challenge) => challenge[field][forward ? dir : reverseDir](),
+        (challenge) => (forward ? challenge.id.desc() : challenge.id.asc()),
+      ])
+      .select('id')
+      .first();
+
+    return neighbor?.id ?? null;
+  }
+
   //챌린지 신청
   create(data) {
     return this.#orm()
@@ -60,24 +120,13 @@ export class ChallengeRepository {
       .create(data);
   }
 
-  // 챌린지 수정 (ADMIN)
-  update(id, data, { tx } = {}) {
-    return this.#orm(tx)
-      .Challenge.where({ id })
-      .select(...this.#fields)
-      .update(data);
-  }
-
   //본인 + 승인 대기일 때만 수정
   updateByRequestor(id, requestorId, data) {
     return this.#orm()
-      .Challenge.where({
-        id,
-        requestorId,
-        status: 'PENDING',
-      })
+      .Challenge.where({ id, requestorId })
+      .where((challenge) => challenge.status.in(['PENDING', 'REJECTED']))
       .select(...this.#fields)
-      .update(data);
+      .update({ ...data, status: 'PENDING' });
   }
 
   //(현재 상태가 from일 때만 to로 변경)
@@ -88,16 +137,13 @@ export class ChallengeRepository {
       .update({ status: to });
   }
 
-  //신청 취소(승인 대기 일 때만)
-  cancel(id, requestorId) {
+  //신청자 취소 (실제 삭제)
+  deleteByRequestor(id, requestorId) {
     return this.#orm()
-      .Challenge.where({
-        id,
-        requestorId,
-        status: 'PENDING',
-      })
-      .select(...this.#fields)
-      .update({ status: 'CANCELED' });
+      .Challenge.where({ id, requestorId, status: 'PENDING' })
+      .where((challenge) => challenge.participations.none())
+      .where((challenge) => challenge.submissions.none())
+      .delete();
   }
 
   //삭제 (참여 이력이 없을 때만 실제 삭제)
