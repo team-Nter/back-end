@@ -32,6 +32,14 @@ export const ERROR_MESSAGE = {
   INVALID_INPUT: '입력값이 올바르지 않습니다.',
   VALIDATION_FAILED: '입력값 검증에 실패했습니다.',
 
+  // Challenge · Participation 관련
+  CHALLENGE_NOT_FOUND: '챌린지를 찾을 수 없습니다.',
+  CHALLENGE_NOT_APPROVED: '아직 승인되지 않은 챌린지입니다.',
+  CHALLENGE_CLOSED: '이미 마감된 챌린지입니다.',
+  CHALLENGE_FULL: '챌린지 참여 정원이 초과되었습니다.',
+  ALREADY_PARTICIPATING: '이미 참여 중인 챌린지입니다.',
+  PARTICIPATION_NOT_FOUND: '참여한 적이 없는 챌린지입니다.',
+
   // 일반 에러 (Exception 기본값으로 사용)
   RESOURCE_NOT_FOUND: '리소스를 찾을 수 없습니다.',
   BAD_REQUEST: '잘못된 요청입니다.',

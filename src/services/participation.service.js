@@ -1,4 +1,4 @@
-// import { ERROR_MESSAGE } from '#constants';
+import { ERROR_MESSAGE } from '#constants';
 import { ConflictException, NotFoundException } from '#exceptions';
 
 export class ParticipationService {
@@ -14,15 +14,15 @@ export class ParticipationService {
     const challenge = await this.#challengeRepository.findById(challengeId);
 
     if (!challenge) {
-      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+      throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
     }
 
     if (challenge.status !== 'APPROVED') {
-      throw new ConflictException('아직 승인 되지 않은 챌린지입니다.');
+      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_NOT_APPROVED);
     }
 
     if (new Date(challenge.deadlineAt) <= new Date()) {
-      throw new ConflictException('이미 마감된 챌린지입니다.');
+      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_CLOSED);
     }
 
     const participation =
@@ -32,18 +32,43 @@ export class ParticipationService {
       });
 
     if (participation) {
-      throw new ConflictException('이미 참여중인 챌린지입니다.');
+      throw new ConflictException(ERROR_MESSAGE.ALREADY_PARTICIPATING);
     }
 
     const count =
       await this.#participationRepository.countByChallengeId(challengeId);
 
     if (count >= challenge.maxParticipants) {
-      throw new ConflictException('챌린지의 참여 정원이 초과되었습니다');
+      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_FULL);
     }
 
     return this.#participationRepository.create({ challengeId, userId });
   }
 
-  leaveChallenge({ challengeId, userId }) {}
+  async leaveChallenge({ challengeId, userId }) {
+    const challenge = await this.#challengeRepository.findById(challengeId);
+
+    if (!challenge) {
+      throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
+    }
+
+    if (new Date(challenge.deadlineAt) <= new Date()) {
+      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_CLOSED);
+    }
+
+    const participation =
+      await this.#participationRepository.findByChallengeIdAndUserId({
+        challengeId,
+        userId,
+      });
+
+    if (!participation) {
+      throw new NotFoundException(ERROR_MESSAGE.PARTICIPATION_NOT_FOUND);
+    }
+
+    await this.#participationRepository.deleteByChallengeIdAndUserId({
+      challengeId,
+      userId,
+    });
+  }
 }
