@@ -22,49 +22,43 @@ import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
 
 export const createContainer = () => {
+  // Repositories
   const userRepository = new UserRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
-
   const participationRepository = new ParticipationRepository({ db });
+
+  // Providers
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
 
+  // Services
   const authService = new AuthService({
     userRepository,
     passwordProvider,
     tokenProvider,
   });
-
+  const userService = new UserService({
+    userRepository,
+    passwordProvider,
+  });
+  const challengeService = new ChallengeService({ challengeRepository });
   const participationService = new ParticipationService({
     participationRepository,
     challengeRepository,
   });
 
-  const userService = new UserService({
-    userRepository,
-    passwordProvider,
-  });
-
-  const challengeService = new ChallengeService({ challengeRepository });
-
+  // Middlewares
   const authMiddleware = new AuthMiddleware({
     tokenProvider,
     authService,
     cookieProvider,
   });
-
   const authorizationMiddleware = new AuthorizationMiddleware({
     userRepository,
   });
-  const challengeController = new ChallengeController({
-    challengeService,
-    authz: authorizationMiddleware,
-  });
-  const participationController = new ParticipationController({
-    participationService,
-    authz: authorizationMiddleware,
-  });
+
+  // Controllers
   const authController = new AuthController({
     authService,
     cookieProvider,
@@ -72,6 +66,14 @@ export const createContainer = () => {
   const userController = new UserController({
     userService,
     challengeService,
+    authz: authorizationMiddleware,
+  });
+  const challengeController = new ChallengeController({
+    challengeService,
+    authz: authorizationMiddleware,
+  });
+  const participationController = new ParticipationController({
+    participationService,
     authz: authorizationMiddleware,
   });
 
