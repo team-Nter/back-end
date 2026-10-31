@@ -60,24 +60,13 @@ export class ChallengeRepository {
       .create(data);
   }
 
-  // 챌린지 수정 (ADMIN)
-  update(id, data, { tx } = {}) {
-    return this.#orm(tx)
-      .Challenge.where({ id })
-      .select(...this.#fields)
-      .update(data);
-  }
-
   //본인 + 승인 대기일 때만 수정
   updateByRequestor(id, requestorId, data) {
     return this.#orm()
-      .Challenge.where({
-        id,
-        requestorId,
-        status: 'PENDING',
-      })
+      .Challenge.where({ id, requestorId })
+      .where((challenge) => challenge.status.in(['PENDING', 'REJECTED']))
       .select(...this.#fields)
-      .update(data);
+      .update({ ...data, status: 'PENDING' });
   }
 
   //(현재 상태가 from일 때만 to로 변경)
@@ -88,16 +77,13 @@ export class ChallengeRepository {
       .update({ status: to });
   }
 
-  //신청 취소(승인 대기 일 때만)
-  cancel(id, requestorId) {
+  //신청자 취소 (실제 삭제)
+  deleteByRequestor(id, requestorId) {
     return this.#orm()
-      .Challenge.where({
-        id,
-        requestorId,
-        status: 'PENDING',
-      })
-      .select(...this.#fields)
-      .update({ status: 'CANCELED' });
+      .Challenge.where({ id, requestorId, status: 'PENDING' })
+      .where((challenge) => challenge.participations.none())
+      .where((challenge) => challenge.submissions.none())
+      .delete();
   }
 
   //삭제 (참여 이력이 없을 때만 실제 삭제)
@@ -143,7 +129,7 @@ export class ChallengeRepository {
     }
 
     const now = new Date().toISOString();
-    if (state === 'progress') {
+    if (state === 'open') {
       query = query.where((challenge) => challenge.deadlineAt.gt(now));
     } else if (state === 'closed') {
       query = query.where((challenge) => challenge.deadlineAt.lte(now));
