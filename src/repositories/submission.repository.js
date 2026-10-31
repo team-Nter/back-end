@@ -36,8 +36,9 @@ export class SubmissionRepository {
     })
       .select(...this.#fields)
       .orderBy([
-        (submission) => submission.createdAt.desc(),
-        (submission) => submission.id.desc(),
+        (submission) => submission.likes.count().desc(),
+        (submission) => submission.submittedAt.asc(),
+        (submission) => submission.id.asc(),
       ])
       .offset(offset)
       .limit(limit)
