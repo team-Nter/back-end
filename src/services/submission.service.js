@@ -22,13 +22,14 @@ export class SubmissionService {
       throw new NotFoundException('작업물을 찾을 수 없습니다');
     }
 
-    const { likes, participation, ...rest } = submission;
+    const { likes, feedbacks, participation, ...rest } = submission;
     const user = participation.user;
     //isLiked는 1차 mvp 내의 내용이 아닌고로 이후 작성
 
     return {
       ...rest,
       likeCount: likes,
+      feedbackCount: feedbacks,
       author: user
         ? {
             id: user.id,
