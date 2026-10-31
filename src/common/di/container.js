@@ -9,7 +9,7 @@ import {
   SubmissionController,
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
-import { AuthMiddleware } from '#middlewares';
+import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
 
 export const createContainer = () => {
   const userRepository = new UserRepository({ db });
@@ -35,6 +35,10 @@ export const createContainer = () => {
     tokenProvider,
     authService,
     cookieProvider,
+  });
+
+  const authorizationMiddleware = new AuthorizationMiddleware({
+    userRepository,
   });
 
   const authController = new AuthController({
