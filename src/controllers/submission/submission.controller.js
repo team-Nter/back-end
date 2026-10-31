@@ -1,5 +1,4 @@
 import { HTTP_STATUS } from '#constants';
-import { UnauthorizedException } from '#exceptions';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
 import {
@@ -9,10 +8,12 @@ import {
 
 export class SubmissionController extends BaseController {
   #submissionService;
+  #authz;
 
-  constructor({ submissionService }) {
+  constructor({ submissionService, authz }) {
     super();
     this.#submissionService = submissionService;
+    this.#authz = authz;
   }
 
   routes() {
@@ -21,10 +22,11 @@ export class SubmissionController extends BaseController {
     );
     this.router.patch(
       '/:submissionId',
+      this.#authz.requireAuth,
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
     );
-    this.router.delete('/:submissionId', (req, res) =>
+    this.router.delete('/:submissionId', this.#authz.requireAuth, (req, res) =>
       this.deleteSubmission(req, res),
     );
 
@@ -35,8 +37,11 @@ export class SubmissionController extends BaseController {
     const router = this.createRouter({ mergeParams: true });
 
     router.get('/', (req, res) => this.getSubmissions(req, res));
-    router.post('/', validate('body', submissionSchema), (req, res) =>
-      this.createSubmission(req, res),
+    router.post(
+      '/',
+      this.#authz.requireAuth,
+      validate('body', submissionSchema),
+      (req, res) => this.createSubmission(req, res),
     );
     return router;
   }
@@ -61,9 +66,6 @@ export class SubmissionController extends BaseController {
   }
 
   async createSubmission(req, res) {
-    if (!req.user) {
-      throw new UnauthorizedException('로그인이 필요합니다.');
-    }
     // 참여자 확인 여부는 participation 쪽 완성 이후 작성 예정
 
     const { challengeId } = req.params;
@@ -80,10 +82,6 @@ export class SubmissionController extends BaseController {
   }
 
   async updateSubmission(req, res) {
-    if (!req.user) {
-      throw new UnauthorizedException('로그인이 필요합니다.');
-    }
-
     const { submissionId } = req.params;
     const { title, content } = req.body;
     const updateSubmission = await this.#submissionService.updateSubmission(
@@ -96,10 +94,6 @@ export class SubmissionController extends BaseController {
   }
 
   async deleteSubmission(req, res) {
-    if (!req.user) {
-      throw new UnauthorizedException('로그인이 필요합니다');
-    }
-
     const { submissionId } = req.params;
 
     await this.#submissionService.deleteSubmission(submissionId, req.user.id);

@@ -50,6 +50,7 @@ export const createContainer = () => {
   });
   const submissionController = new SubmissionController({
     submissionService,
+    authz: authorizationMiddleware,
   });
 
   const controller = new Controller({
