@@ -1,16 +1,25 @@
 import { config } from '#config';
 import { db } from '#prisma/db.js';
-import { SubmissionRepository, UserRepository } from '#repositories';
-import { AuthService, SubmissionService, UserService } from '#services';
+import {
+  UserRepository,
+  ChallengeRepository,
+  SubmissionRepository,
+} from '#repositories';
+import {
+  AuthService,
+  UserService,
+  ChallengeService,
+  SubmissionService,
+} from '#services';
 import {
   AuthController,
   UserController,
-  Controller,
+  ChallengeController,
   SubmissionController,
+  Controller,
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
-import { ChallengeRepository } from '../../repositories/challenge.repository.js';
 
 export const createContainer = () => {
   const userRepository = new UserRepository({ db });
@@ -29,6 +38,8 @@ export const createContainer = () => {
     userRepository,
     passwordProvider,
   });
+
+  const challengeService = new ChallengeService({ challengeRepository });
   const submissionService = new SubmissionService({
     submissionRepository,
     challengeRepository,
@@ -44,13 +55,21 @@ export const createContainer = () => {
     userRepository,
   });
 
+  const challengeController = new ChallengeController({
+    challengeService,
+    authz: authorizationMiddleware,
+  });
+
   const authController = new AuthController({
     authService,
     cookieProvider,
   });
   const userController = new UserController({
     userService,
+    challengeService,
+    authz: authorizationMiddleware,
   });
+
   const submissionController = new SubmissionController({
     submissionService,
     authz: authorizationMiddleware,
@@ -59,6 +78,7 @@ export const createContainer = () => {
   const controller = new Controller({
     authController,
     userController,
+    challengeController,
     submissionController,
   });
 
