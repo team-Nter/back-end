@@ -61,7 +61,7 @@ export class SubmissionService {
       }),
       this.#submissionRepository.countByChallengeId(challengeId),
     ]);
-    const totalPage = Math.ceil(totalCount / pageSize);
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     const items = submissions.map((submission) => {
       const user = submission.participation.user;
@@ -89,7 +89,7 @@ export class SubmissionService {
       page,
       pageSize,
       totalCount,
-      totalPage,
+      totalPages,
     };
     return { items, pagination };
   }
