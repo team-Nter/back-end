@@ -1,14 +1,17 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '#exceptions';
 
 export class SubmissionService {
   #submissionRepository;
+  #challengeRepository;
 
-  constructor({ submissionRepository }) {
+  constructor({ submissionRepository, challengeRepository }) {
     this.#submissionRepository = submissionRepository;
+    this.#challengeRepository = challengeRepository;
   }
 
   // 작업물 단일 조회
@@ -37,7 +40,12 @@ export class SubmissionService {
   }
 
   async getSubmissions(challengeId, page = 1, pageSize = 1) {
-    // 관련 사항들은 차후 validate 쪽에 들어갈 것.
+    const challenge = await this.#challengeRepository.findById(challengeId);
+
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
     page = Number(page);
     pageSize = Number(pageSize);
     const offset = (page - 1) * pageSize;
@@ -95,6 +103,19 @@ export class SubmissionService {
   }
 
   async createSubmission(challengeId, data) {
+    const challenge = await this.#challengeRepository.findById(challengeId);
+
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    if (
+      challenge.status !== 'APPROVED' ||
+      new Date(challenge.deadlineAt).getTime() <= Date.now()
+    ) {
+      throw new ConflictException('제출할 수 없는 챌린지입니다.');
+    }
+
     // TODO: 실험용 body 입력 대신 로그인 사용자의 참여 기록으로 검증·대체
     const submission = await this.#submissionRepository.create(
       challengeId,

@@ -10,10 +10,12 @@ import {
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
+import { ChallengeRepository } from '../../repositories/challenge.repository.js';
 
 export const createContainer = () => {
   const userRepository = new UserRepository({ db });
   const submissionRepository = new SubmissionRepository({ db });
+  const challengeRepository = new ChallengeRepository({ db });
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
@@ -29,6 +31,7 @@ export const createContainer = () => {
   });
   const submissionService = new SubmissionService({
     submissionRepository,
+    challengeRepository,
   });
 
   const authMiddleware = new AuthMiddleware({
