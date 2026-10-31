@@ -18,8 +18,8 @@ export class Controller extends BaseController {
 
   routes() {
     this.router.use('/auth', this.#authController.routes());
-    this.router.use('/user', this.#userController.routes());
-    this.router.use('/challenge', this.#challengeController.routes());
+    this.router.use('/users', this.#userController.routes());
+    this.router.use('/challenges', this.#challengeController.routes());
 
     this.router.get('/ping', (req, res) => this.ping(req, res));
 

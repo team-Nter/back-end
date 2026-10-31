@@ -1,7 +1,8 @@
 import { BaseController } from '../base.controller.js';
-import { HTTP_STATUS } from '#constants';
+import { ERROR_MESSAGE, HTTP_STATUS } from '#constants';
 import { validate } from '#middlewares';
 import { signUpSchema, loginSchema } from './dto/auth.dto.js';
+import { UnauthorizedException } from '#exceptions';
 
 export class AuthController extends BaseController {
   #authService;
@@ -22,19 +23,16 @@ export class AuthController extends BaseController {
     );
     this.router.post('/logout', (req, res) => this.logout(req, res));
     this.router.get('/me', (req, res) => this.me(req, res));
+
     return this.router;
   }
 
   async signUp(req, res) {
-    const { email, password, name } = req.body;
-    const { user, tokens } = await this.#authService.signUp({
-      email,
-      password,
-      name,
-    });
-
+    const { user, tokens } = await this.#authService.signUp(req.body);
+    const { passwordHash, ...rest } = user;
     this.#cookieProvider.setAuthCookies(res, tokens);
-    res.status(HTTP_STATUS.CREATED).json(user);
+
+    return res.status(HTTP_STATUS.CREATED).json(rest);
   }
 
   async login(req, res) {
@@ -43,20 +41,20 @@ export class AuthController extends BaseController {
       email,
       password,
     });
-
     this.#cookieProvider.setAuthCookies(res, tokens);
-    res.status(HTTP_STATUS.OK).json(user);
+    const { passwordHash, ...rest } = user;
+
+    return res.status(HTTP_STATUS.OK).json(rest);
   }
 
-  async logout(req, res) {
+  logout(_req, res) {
     this.#cookieProvider.clearAuthCookies(res);
-    res.sendStatus(HTTP_STATUS.NO_CONTENT);
+    return res.sendStatus(HTTP_STATUS.NO_CONTENT);
   }
 
   async me(req, res) {
     if (!req.user) {
-      res.status(HTTP_STATUS.OK).json(null);
-      return;
+      throw new UnauthorizedException(ERROR_MESSAGE.UNAUTHORIZED);
     }
 
     const user = await this.#authService.getMe(req.user.id);

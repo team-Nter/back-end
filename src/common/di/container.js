@@ -52,6 +52,8 @@ export const createContainer = () => {
   });
   const userController = new UserController({
     userService,
+    challengeService,
+    authz: authorizationMiddleware,
   });
 
   const controller = new Controller({

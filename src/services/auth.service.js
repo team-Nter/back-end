@@ -16,9 +16,9 @@ export class AuthService {
     this.#tokenProvider = tokenProvider;
   }
 
-  async signUp({ email, password, name }) {
-    const existingUser = await this.#userRepository.findByEmail(email);
-    if (existingUser) {
+  async signUp({ email, password, nickname }) {
+    const foundUser = await this.#userRepository.findByEmail(email);
+    if (foundUser) {
       throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
     }
 
@@ -26,8 +26,11 @@ export class AuthService {
 
     const user = await this.#userRepository.create({
       email,
-      password: hashedPassword,
-      name,
+      passwordHash: hashedPassword,
+      nickname,
+      role: 'USER',
+      grade: 'NORMAL',
+      provider: 'LOCAL',
     });
 
     const tokens = this.#tokenProvider.generateTokens(user);
@@ -52,9 +55,9 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);
     }
 
-    const user = await this.#userRepository.findById(authUser.id);
+    const user = await this.#userRepository.findByIdWithAuthFields(authUser.id);
     if (!user) {
-      throw new UnauthorizedException(ERROR_MESSAGE.USER_NOT_FOUND_FROM_TOKEN);
+      throw new UnauthorizedException(ERROR_MESSAGE.USER_NOT_FOUND);
     }
 
     const tokens = this.#tokenProvider.generateTokens(user);
@@ -63,7 +66,7 @@ export class AuthService {
   }
 
   async getMe(userId) {
-    const user = await this.#userRepository.findById(userId);
+    const user = await this.#userRepository.findByIdWithAuthFields(userId);
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGE.USER_NOT_FOUND);
     }
@@ -77,7 +80,9 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_TOKEN);
     }
 
-    const user = await this.#userRepository.findById(payload.userId);
+    const user = await this.#userRepository.findByIdWithAuthFields(
+      payload.userId,
+    );
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGE.USER_NOT_FOUND_FROM_TOKEN);
     }
