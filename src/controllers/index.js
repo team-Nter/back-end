@@ -3,26 +3,38 @@ import { BaseController } from './base.controller.js';
 export * from './auth/index.js';
 export * from './user/index.js';
 export * from './challenge/challenge.controller.js';
+export * from './submission/index.js';
 
 export class Controller extends BaseController {
   #authController;
   #userController;
   #challengeController;
+  #submissionController;
 
-  constructor({ authController, userController, challengeController }) {
+  constructor({
+    authController,
+    userController,
+    challengeController,
+    submissionController,
+  }) {
     super();
     this.#authController = authController;
     this.#userController = userController;
     this.#challengeController = challengeController;
+    this.#submissionController = submissionController;
   }
 
   routes() {
     this.router.use('/auth', this.#authController.routes());
-    this.router.use('/user', this.#userController.routes());
-    this.router.use('/challenge', this.#challengeController.routes());
+    this.router.use('/users', this.#userController.routes());
+    this.router.use('/challenges', this.#challengeController.routes());
 
     this.router.get('/ping', (req, res) => this.ping(req, res));
-
+    this.router.use('/submission', this.#submissionController.routes());
+    this.router.use(
+      '/challenges/:challengeId/submissions',
+      this.#submissionController.challengeRoutes(),
+    );
     return this.router;
   }
 

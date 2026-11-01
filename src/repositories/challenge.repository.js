@@ -189,7 +189,7 @@ export class ChallengeRepository {
     }
 
     const now = new Date().toISOString();
-    if (state === 'progress') {
+    if (state === 'open') {
       query = query.where((challenge) => challenge.deadlineAt.gt(now));
     } else if (state === 'closed') {
       query = query.where((challenge) => challenge.deadlineAt.lte(now));

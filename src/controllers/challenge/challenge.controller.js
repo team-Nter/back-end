@@ -4,7 +4,6 @@ import { validate } from '#middlewares';
 import {
   challengeIdParamSchema,
   createChallengeSchema,
-  myChallengeListQuerySchema,
   adminChallengeListQuerySchema,
   adminChallengeDetailQuerySchema,
 } from './dto/challenge.dto.js';
@@ -27,22 +26,8 @@ export class ChallengeController extends BaseController {
       (req, res) => this.createChallenge(req, res),
     );
 
-    this.router.get(
-      '/me',
-      this.#authz.requireAuth,
-      validate('query', myChallengeListQuerySchema),
-      (req, res) => this.getMyChallenges(req, res),
-    );
-
-    this.router.get(
-      '/me/:challengeId',
-      this.#authz.requireAuth,
-      validate('params', challengeIdParamSchema),
-      (req, res) => this.getMyChallengeDetail(req, res),
-    );
-
     this.router.delete(
-      '/me/:challengeId',
+      '/:challengeId',
       this.#authz.requireAuth,
       validate('params', challengeIdParamSchema),
       (req, res) => this.deleteMyChallenge(req, res),
@@ -73,24 +58,6 @@ export class ChallengeController extends BaseController {
       req.body,
     );
     res.status(HTTP_STATUS.CREATED).json(newChallenge);
-  }
-
-  async getMyChallenges(req, res) {
-    const { type, ...query } = req.query;
-    const myChallenges = await this.#challengeService.getMyChallenges(
-      req.user.id,
-      type,
-      query,
-    );
-    res.status(HTTP_STATUS.OK).json(myChallenges);
-  }
-
-  async getMyChallengeDetail(req, res) {
-    const myChallengeDetail = await this.#challengeService.getMyChallengeDetail(
-      req.params.challengeId,
-      req.user.id,
-    );
-    res.status(HTTP_STATUS.OK).json(myChallengeDetail);
   }
 
   async deleteMyChallenge(req, res) {

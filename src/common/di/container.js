@@ -1,22 +1,32 @@
 import { config } from '#config';
 import { db } from '#prisma/db.js';
-import { UserRepository, ChallengeRepository } from '#repositories';
-import { AuthService, UserService, ChallengeService } from '#services';
+import {
+  UserRepository,
+  ChallengeRepository,
+  SubmissionRepository,
+  ModerationLogRepository,
+} from '#repositories';
+import {
+  AuthService,
+  UserService,
+  ChallengeService,
+  SubmissionService,
+} from '#services';
 import {
   AuthController,
   UserController,
   ChallengeController,
+  SubmissionController,
   Controller,
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
-import { ModerationLogRepository } from '../../repositories/moderation-log.repository.js';
 
 export const createContainer = () => {
   const userRepository = new UserRepository({ db });
+  const submissionRepository = new SubmissionRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const moderationLogRepository = new ModerationLogRepository({ db });
-
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
@@ -34,6 +44,10 @@ export const createContainer = () => {
   const challengeService = new ChallengeService({
     challengeRepository,
     moderationLogRepository,
+  });
+  const submissionService = new SubmissionService({
+    submissionRepository,
+    challengeRepository,
   });
 
   const authMiddleware = new AuthMiddleware({
@@ -57,12 +71,20 @@ export const createContainer = () => {
   });
   const userController = new UserController({
     userService,
+    challengeService,
+    authz: authorizationMiddleware,
+  });
+
+  const submissionController = new SubmissionController({
+    submissionService,
+    authz: authorizationMiddleware,
   });
 
   const controller = new Controller({
     authController,
     userController,
     challengeController,
+    submissionController,
   });
 
   return { controller, db, authMiddleware };
