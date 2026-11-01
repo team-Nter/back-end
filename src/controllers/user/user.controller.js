@@ -22,13 +22,13 @@ export class UserController extends BaseController {
   routes() {
     this.router.get('/', (req, res) => this.getUsers(req, res));
     this.router.get(
-      '/challenges',
+      '/me/challenges',
       this.#authz.requireAuth,
       validate('query', myChallengeListQuerySchema),
       (req, res) => this.getMyChallenges(req, res),
     );
     this.router.get(
-      '/challenges/:challengeId',
+      '/me/challenges/:challengeId',
       this.#authz.requireAuth,
       validate('params', challengeIdParamSchema),
       (req, res) => this.getMyChallengeDetail(req, res),
