@@ -3,18 +3,21 @@ import { db } from '#prisma/db.js';
 import {
   UserRepository,
   ChallengeRepository,
+  SubmissionRepository,
   ParticipationRepository,
 } from '#repositories';
 import {
   AuthService,
   UserService,
   ChallengeService,
+  SubmissionService,
   ParticipationService,
 } from '#services';
 import {
   AuthController,
   UserController,
   ChallengeController,
+  SubmissionController,
   ParticipationController,
   Controller,
 } from '#controllers';
@@ -24,6 +27,7 @@ import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
 export const createContainer = () => {
   // Repositories
   const userRepository = new UserRepository({ db });
+  const submissionRepository = new SubmissionRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
 
@@ -43,6 +47,10 @@ export const createContainer = () => {
     passwordProvider,
   });
   const challengeService = new ChallengeService({ challengeRepository });
+  const submissionService = new SubmissionService({
+    submissionRepository,
+    challengeRepository,
+  });
   const participationService = new ParticipationService({
     participationRepository,
     challengeRepository,
@@ -68,6 +76,10 @@ export const createContainer = () => {
     challengeService,
     authz: authorizationMiddleware,
   });
+  const submissionController = new SubmissionController({
+    submissionService,
+    authz: authorizationMiddleware,
+  });
   const challengeController = new ChallengeController({
     challengeService,
     authz: authorizationMiddleware,
@@ -81,6 +93,7 @@ export const createContainer = () => {
     authController,
     userController,
     challengeController,
+    submissionController,
     participationController,
   });
 
