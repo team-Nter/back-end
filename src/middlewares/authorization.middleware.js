@@ -21,7 +21,9 @@ export class AuthorizationMiddleware {
       if (!req.user) {
         throw new UnauthorizedException(ERROR_MESSAGE.UNAUTHORIZED);
       }
-      const user = await this.#userRepository.findRoleById(req.user.id);
+      const user = await this.#userRepository.findByIdWithAuthFields(
+        req.user.id,
+      );
 
       if (!user) {
         throw new UnauthorizedException(
