@@ -5,32 +5,40 @@ import {
   ChallengeRepository,
   SubmissionRepository,
   ModerationLogRepository,
+  ParticipationRepository,
 } from '#repositories';
 import {
   AuthService,
   UserService,
   ChallengeService,
   SubmissionService,
+  ParticipationService,
 } from '#services';
 import {
   AuthController,
   UserController,
   ChallengeController,
   SubmissionController,
+  ParticipationController,
   Controller,
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
 
 export const createContainer = () => {
+  // Repositories
   const userRepository = new UserRepository({ db });
   const submissionRepository = new SubmissionRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const moderationLogRepository = new ModerationLogRepository({ db });
+  const participationRepository = new ParticipationRepository({ db });
+
+  // Providers
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
 
+  // Services
   const authService = new AuthService({
     userRepository,
     passwordProvider,
@@ -49,22 +57,22 @@ export const createContainer = () => {
     submissionRepository,
     challengeRepository,
   });
+  const participationService = new ParticipationService({
+    participationRepository,
+    challengeRepository,
+  });
 
+  // Middlewares
   const authMiddleware = new AuthMiddleware({
     tokenProvider,
     authService,
     cookieProvider,
   });
-
   const authorizationMiddleware = new AuthorizationMiddleware({
     userRepository,
   });
 
-  const challengeController = new ChallengeController({
-    challengeService,
-    authz: authorizationMiddleware,
-  });
-
+  // Controllers
   const authController = new AuthController({
     authService,
     cookieProvider,
@@ -74,9 +82,16 @@ export const createContainer = () => {
     challengeService,
     authz: authorizationMiddleware,
   });
-
   const submissionController = new SubmissionController({
     submissionService,
+    authz: authorizationMiddleware,
+  });
+  const challengeController = new ChallengeController({
+    challengeService,
+    authz: authorizationMiddleware,
+  });
+  const participationController = new ParticipationController({
+    participationService,
     authz: authorizationMiddleware,
   });
 
@@ -85,6 +100,7 @@ export const createContainer = () => {
     userController,
     challengeController,
     submissionController,
+    participationController,
   });
 
   return { controller, db, authMiddleware };
