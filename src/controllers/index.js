@@ -39,7 +39,6 @@ export class Controller extends BaseController {
       '/challenges/:challengeId/participants',
       this.#participationController.routes(),
     );
-    this.router.use('/user', this.#userController.routes());
     this.router.use(
       '/submission/:submissionId/feedbacks',
       this.#feedbackController.routes(),
