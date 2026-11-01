@@ -11,12 +11,14 @@ import {
   UserService,
   ChallengeService,
   SubmissionService,
+  ModerationLogService,
 } from '#services';
 import {
   AuthController,
   UserController,
   ChallengeController,
   SubmissionController,
+  ModerationLogController,
   Controller,
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
@@ -50,6 +52,12 @@ export const createContainer = () => {
     challengeRepository,
   });
 
+  const moderationLogService = new ModerationLogService({
+    db,
+    challengeRepository,
+    moderationLogRepository,
+  });
+
   const authMiddleware = new AuthMiddleware({
     tokenProvider,
     authService,
@@ -80,11 +88,17 @@ export const createContainer = () => {
     authz: authorizationMiddleware,
   });
 
+  const moderationLogController = new ModerationLogController({
+    moderationLogService,
+    authz: authorizationMiddleware,
+  });
+
   const controller = new Controller({
     authController,
     userController,
     challengeController,
     submissionController,
+    moderationLogController,
   });
 
   return { controller, db, authMiddleware };

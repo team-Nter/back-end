@@ -4,24 +4,28 @@ export * from './auth/index.js';
 export * from './user/index.js';
 export * from './challenge/challenge.controller.js';
 export * from './submission/index.js';
+export * from './moderation-log/index.js';
 
 export class Controller extends BaseController {
   #authController;
   #userController;
   #challengeController;
   #submissionController;
+  #moderationLogController;
 
   constructor({
     authController,
     userController,
     challengeController,
     submissionController,
+    moderationLogController,
   }) {
     super();
     this.#authController = authController;
     this.#userController = userController;
     this.#challengeController = challengeController;
     this.#submissionController = submissionController;
+    this.#moderationLogController = moderationLogController;
   }
 
   routes() {
@@ -34,6 +38,10 @@ export class Controller extends BaseController {
     this.router.use(
       '/challenges/:challengeId/submissions',
       this.#submissionController.challengeRoutes(),
+    );
+    this.router.use(
+      '/challenges/:challengeId/moderation-logs',
+      this.#moderationLogController.routes(),
     );
     return this.router;
   }

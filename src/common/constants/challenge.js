@@ -17,3 +17,5 @@ export const ADMIN_CHALLENGE_SORTS = [
   'deadlineAsc',
   'deadlineDesc',
 ]
+
+export const MODERATION_ACTION = ['APPROVE', 'REJECT', 'CANCEL'];
