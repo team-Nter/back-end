@@ -2,10 +2,12 @@ import { DB_ERROR, ERROR_MESSAGE } from '#constants';
 import { ConflictException, NotFoundException } from '#exceptions';
 
 export class ParticipationService {
+  #db;
   #participationRepository;
   #challengeRepository;
 
-  constructor({ participationRepository, challengeRepository }) {
+  constructor({ db, participationRepository, challengeRepository }) {
+    this.#db = db;
     this.#participationRepository = participationRepository;
     this.#challengeRepository = challengeRepository;
   }

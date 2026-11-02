@@ -65,6 +65,7 @@ export const createContainer = () => {
     challengeRepository,
   });
   const participationService = new ParticipationService({
+    db,
     participationRepository,
     challengeRepository,
   });
