@@ -275,7 +275,7 @@ export class Seeder {
         }),
       ),
     ];
-    // CHALLENGE_APPROVED CHALLENGE_REJECTED
+
     return await this.#insert('Notification', data);
   }
 
