@@ -69,6 +69,15 @@ export class ChallengeRepository {
     }));
   }
 
+  // 해당 챌린지가 목록 필터(상태·검색어)에 포함되는지
+  async isInList(id, filters) {
+    const found = await this.#buildListQuery(filters)
+      .where({ id })
+      .select('id')
+      .first();
+    return !!found;
+  }
+
   //어드민 상세의 이전/다음
   async findAdjacentIds(current, filters, sort = 'createdAtDesc') {
     const [prevId, nextId] = await Promise.all([

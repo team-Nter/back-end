@@ -102,10 +102,7 @@ export class ChallengeService {
   }
 
   async getAdminChallenges({ status, sort, page, pageSize, keyword }) {
-    const filters = {
-      statuses: status ? [status] : CHALLENGE_STATUSES,
-      keyword,
-    };
+    const filters = this.#buildAdminFilters({ status, keyword });
 
     const [items, { total }] = await Promise.all([
       this.#challengeRepository.findMany({ page, pageSize, sort, ...filters }),
@@ -131,9 +128,12 @@ export class ChallengeService {
 
     const filters = this.#buildAdminFilters({ status, keyword });
     const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
+    const inList = await this.#challengeRepository.isInList(id, filters);
 
     const [adjacent, moderation] = await Promise.all([
-      this.#challengeRepository.findAdjacentIds(challenge, filters, sort),
+      inList
+        ? this.#challengeRepository.findAdjacentIds(challenge, filters, sort)
+        : { prevId: null, nextId: null },
       hasModeration
         ? this.#moderationLogRepository.findLatestByChallenge(id)
         : null,

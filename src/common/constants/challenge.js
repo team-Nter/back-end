@@ -9,13 +9,18 @@ export const CHALLENGE_CATEGORIES = [
 
 export const DOCUMENT_TYPES = ['OFFICIAL_DOCUMENT', 'BLOG'];
 
-export const CHALLENGE_STATUSES = ['PENDING', 'APPROVED', 'REJECTED','CANCELED']
+export const CHALLENGE_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'CANCELED',
+];
 
 export const ADMIN_CHALLENGE_SORTS = [
   'createdAtDesc',
   'createdAtAsc',
   'deadlineAsc',
   'deadlineDesc',
-]
+];
 
 export const MODERATION_ACTION = ['APPROVE', 'REJECT', 'CANCEL'];
