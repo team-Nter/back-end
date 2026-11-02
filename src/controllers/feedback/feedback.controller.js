@@ -2,7 +2,10 @@ import { HTTP_STATUS } from '#constants';
 import { UnauthorizedException } from '#exceptions';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
-import { createFeedbackSchema } from './dto/feedback.dto.js';
+import {
+  createFeedbackSchema,
+  feedbackParamsSchema,
+} from './dto/feedback.dto.js';
 
 export class FeedbackController extends BaseController {
   #feedbackService;

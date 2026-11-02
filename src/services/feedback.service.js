@@ -21,6 +21,7 @@ export class FeedbackService {
       page < 1 ||
       !Number.isSafeInteger(pageSize) ||
       pageSize < 1 ||
+      pageSize > 100 ||
       !Number.isSafeInteger(offset)
     ) {
       throw new BadRequestException(
@@ -28,14 +29,13 @@ export class FeedbackService {
       );
     }
 
-    const items = await this.#feedbackRepository.findAll(submissionId, {
-      offset,
-      limit: pageSize,
-    });
-
-    const totalCount =
-      await this.#feedbackRepository.countFeedbacks(submissionId);
-
+    const [items, totalCount] = await Promise.all([
+      this.#feedbackRepository.findAll(submissionId, {
+        offset,
+        limit: pageSize,
+      }),
+      this.#feedbackRepository.countFeedbacks(submissionId),
+    ]);
     return {
       items,
       pagination: {
