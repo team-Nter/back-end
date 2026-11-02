@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '#exceptions';
+import { CHALLENGE_STATUSES } from '#constants';
 
 const MY_CHALLENGE_FILTERS = {
   requested: (userId) => ({
@@ -23,9 +24,11 @@ const MY_CHALLENGE_FILTERS = {
 
 export class ChallengeService {
   #challengeRepository;
+  #moderationLogRepository;
 
-  constructor({ challengeRepository }) {
+  constructor({ challengeRepository, moderationLogRepository }) {
     this.#challengeRepository = challengeRepository;
+    this.#moderationLogRepository = moderationLogRepository;
   }
 
   async createChallenge(userId, data) {
@@ -98,11 +101,59 @@ export class ChallengeService {
     );
   }
 
-  //async getAdminChallenges(query) {}
+  async getAdminChallenges({ status, sort, page, pageSize, keyword }) {
+    const filters = this.#buildAdminFilters({ status, keyword });
 
-  //async getAdminChallengeDetail(id) {}
+    const [items, { total }] = await Promise.all([
+      this.#challengeRepository.findMany({ page, pageSize, sort, ...filters }),
+      this.#challengeRepository.count(filters),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalCount: total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
+  async getAdminChallengeDetail(id, { status, keyword, sort } = {}) {
+    const challenge = await this.#challengeRepository.findById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    const filters = this.#buildAdminFilters({ status, keyword });
+    const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
+    const inList = await this.#challengeRepository.isInList(id, filters);
+
+    const [adjacent, moderation] = await Promise.all([
+      inList
+        ? this.#challengeRepository.findAdjacentIds(challenge, filters, sort)
+        : { prevId: null, nextId: null },
+      hasModeration
+        ? this.#moderationLogRepository.findLatestByChallenge(id)
+        : null,
+    ]);
+
+    return {
+      ...challenge,
+      ...adjacent,
+      moderation: moderation ?? null,
+    };
+  }
 
   //async moderateChallenge(id, adminId, { action, reason }) {}
 
   //async updateChallenge(id, adminId, data) {}
+
+  #buildAdminFilters({ status, keyword } = {}) {
+    return {
+      statuses: status ? [status] : CHALLENGE_STATUSES,
+      keyword,
+    };
+  }
 }
