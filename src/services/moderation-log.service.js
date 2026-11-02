@@ -17,7 +17,7 @@ export class ModerationLogService {
     this.#moderationLogRepository = moderationLogRepository;
   }
 
-  async moderationChallenge(challengeId, adminId, { action, reason }) {
+  async moderateChallenge(challengeId, adminId, { action, reason }) {
     const { from, to } = MODERATION_RULES[action];
 
     return this.#db.transaction(async (tx) => {
@@ -43,12 +43,17 @@ export class ModerationLogService {
       }
 
       const moderation = await this.#moderationLogRepository.create(
-        { challengeId: challengeId, adminId, action, reason: reason ?? null },
+        { challengeId, adminId, action, reason: reason ?? null },
         { tx },
       );
 
       // TODO: 승인·거절 알림 타입 추가 후 NotificationRepository.create(..., { tx })
-      return { challengeId: challengeId, status: updated.status, moderation };
+      return {
+        challengeId,
+        status: updated.status,
+        moderation,
+        updatedAt: updated.updatedAt,
+      };
     });
   }
 }

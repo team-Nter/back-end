@@ -69,7 +69,6 @@ export const createContainer = () => {
     challengeRepository,
   });
 
-  // Middlewares
   const feedbackService = new FeedbackService({ feedbackRepository });
 
   const moderationLogService = new ModerationLogService({
@@ -77,6 +76,8 @@ export const createContainer = () => {
     challengeRepository,
     moderationLogRepository,
   });
+
+  // Middlewares
 
   const authMiddleware = new AuthMiddleware({
     tokenProvider,

@@ -30,7 +30,7 @@ export class ModerationLogController extends BaseController {
   }
 
   async moderateChallenge(req, res) {
-    const result = await this.#moderationLogService.moderationChallenge(
+    const result = await this.#moderationLogService.moderateChallenge(
       req.params.challengeId,
       req.user.id,
       req.body,
