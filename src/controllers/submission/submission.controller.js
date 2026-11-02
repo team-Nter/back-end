@@ -24,7 +24,6 @@ export class SubmissionController extends BaseController {
     this.router.patch(
       '/:submissionId',
       this.#authz.requireAuth,
-      validate('params', feedbackParamsSchema),
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
     );
