@@ -1,10 +1,16 @@
-import { BadRequestException } from '#exceptions';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '#exceptions';
 
 export class FeedbackService {
   #feedbackRepository;
+  #submissionRepository;
 
-  constructor({ feedbackRepository }) {
+  constructor({ feedbackRepository, submissionRepository }) {
     this.#feedbackRepository = feedbackRepository;
+    this.#submissionRepository = submissionRepository;
   }
 
   async getFeedbacks(submissionId, page = 1, pageSize = 10) {
@@ -23,6 +29,12 @@ export class FeedbackService {
       throw new BadRequestException(
         '페이지와 페이지 크기는 유효한 양의 정수여야 합니다',
       );
+    }
+
+    const submission = await this.#submissionRepository.findById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
     }
 
     const [items, totalCount] = await Promise.all([
@@ -44,10 +56,46 @@ export class FeedbackService {
   }
 
   async createFeedback(submissionId, authorId, content) {
+    const submission = await this.#submissionRepository.findById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
+    }
+
     return await this.#feedbackRepository.create(
       submissionId,
       authorId,
       content,
     );
+  }
+
+  async updateFeedback(feedbackId, userId, content) {
+    const feedback = await this.#feedbackRepository.findById(feedbackId);
+    if (!feedback) {
+      throw new NotFoundException('피드백을 찾을 수 없습니다');
+    }
+
+    if (feedback.authorId !== userId) {
+      throw new ForbiddenException(
+        '본인이 작성한 피드백만 수정할 수 있습니다.',
+      );
+    }
+    return await this.#feedbackRepository.update(feedbackId, content);
+  }
+
+  async deleteFeedback(feedbackId, userId) {
+    const feedback = await this.#feedbackRepository.findById(feedbackId);
+
+    if (!feedback) {
+      throw new NotFoundException('피드백을 찾을 수 없습니다');
+    }
+
+    if (feedback.authorId !== userId) {
+      throw new ForbiddenException(
+        '본인이 작성한 피드백만 삭제할 수 있습니다.',
+      );
+    }
+
+    return await this.#feedbackRepository.delete(feedbackId);
   }
 }

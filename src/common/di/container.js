@@ -69,7 +69,10 @@ export const createContainer = () => {
     challengeRepository,
   });
 
-  const feedbackService = new FeedbackService({ feedbackRepository });
+  const feedbackService = new FeedbackService({
+    feedbackRepository,
+    submissionRepository,
+  });
 
   const moderationLogService = new ModerationLogService({
     db,
@@ -112,6 +115,7 @@ export const createContainer = () => {
   });
   const feedbackController = new FeedbackController({
     feedbackService,
+    authz: authorizationMiddleware,
   });
 
   const moderationLogController = new ModerationLogController({
