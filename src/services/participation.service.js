@@ -1,4 +1,4 @@
-import { ERROR_MESSAGE } from '#constants';
+import { DB_ERROR, ERROR_MESSAGE } from '#constants';
 import { ConflictException, NotFoundException } from '#exceptions';
 
 export class ParticipationService {
@@ -42,7 +42,18 @@ export class ParticipationService {
       throw new ConflictException(ERROR_MESSAGE.CHALLENGE_FULL);
     }
 
-    return this.#participationRepository.create({ challengeId, userId });
+    try {
+      return await this.#participationRepository.create({
+        challengeId,
+        userId,
+      });
+    } catch (error) {
+      if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
+        throw new ConflictException(ERROR_MESSAGE.ALREADY_PARTICIPATING);
+      }
+
+      throw error;
+    }
   }
 
   async leaveChallenge({ challengeId, userId }) {
