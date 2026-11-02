@@ -14,6 +14,11 @@ const ACTION_BY_STATUS = {
   CANCELED: 'CANCEL',
 };
 
+const NOTIFICATION_TYPE_BY_STATUS = {
+  APPROVED: 'CHALLENGE_APPROVED',
+  REJECTED: 'CHALLENGE_REJECTED',
+};
+
 export class Seeder {
   #db;
   #numUsersToCreate;
@@ -257,23 +262,15 @@ export class Seeder {
       ),
 
       //
-      ...submissions.map((s) =>
-        this.#makeNotificationInput({
-          recipientId: challengeById.get(s.challengeId).requestorId,
-          type: 'CHALLENGE_REJECTED',
-          challengeId: s.challengeId,
-          submissionId: s.id,
-        }),
-      ),
-
-      ...submissions.map((s) =>
-        this.#makeNotificationInput({
-          recipientId: challengeById.get(s.challengeId).requestorId,
-          type: 'CHALLENGE_APPROVED',
-          challengeId: s.challengeId,
-          submissionId: s.id,
-        }),
-      ),
+      ...challenges
+        .filter((c) => NOTIFICATION_TYPE_BY_STATUS[c.status])
+        .map((c) =>
+          this.#makeNotificationInput({
+            recipientId: c.requestorId,
+            type: NOTIFICATION_TYPE_BY_STATUS[c.status],
+            challengeId: c.id,
+          }),
+        ),
     ];
 
     return await this.#insert('Notification', data);
