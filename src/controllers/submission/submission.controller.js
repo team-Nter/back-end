@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from '#constants';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
+import { feedbackParamsSchema } from '../feedback/dto/feedback.dto.js';
 import {
   submissionSchema,
   updateSubmissionSchema,
@@ -23,6 +24,7 @@ export class SubmissionController extends BaseController {
     this.router.patch(
       '/:submissionId',
       this.#authz.requireAuth,
+      validate('params', feedbackParamsSchema),
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
     );

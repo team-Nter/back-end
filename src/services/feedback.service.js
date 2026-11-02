@@ -6,9 +6,11 @@ import {
 
 export class FeedbackService {
   #feedbackRepository;
+  #submissionRepository;
 
-  constructor({ feedbackRepository }) {
+  constructor({ feedbackRepository, submissionRepository }) {
     this.#feedbackRepository = feedbackRepository;
+    this.#submissionRepository = submissionRepository;
   }
 
   async getFeedbacks(submissionId, page = 1, pageSize = 10) {
@@ -27,6 +29,12 @@ export class FeedbackService {
       throw new BadRequestException(
         '페이지와 페이지 크기는 유효한 양의 정수여야 합니다',
       );
+    }
+
+    const submission = await this.#submissionRepository.findById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
     }
 
     const [items, totalCount] = await Promise.all([
@@ -48,6 +56,12 @@ export class FeedbackService {
   }
 
   async createFeedback(submissionId, authorId, content) {
+    const submission = await this.#submissionRepository.findById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
+    }
+
     return await this.#feedbackRepository.create(
       submissionId,
       authorId,

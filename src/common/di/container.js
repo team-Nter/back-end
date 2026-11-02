@@ -61,7 +61,10 @@ export const createContainer = () => {
   });
 
   // Middlewares
-  const feedbackService = new FeedbackService({ feedbackRepository });
+  const feedbackService = new FeedbackService({
+    feedbackRepository,
+    submissionRepository,
+  });
 
   const authMiddleware = new AuthMiddleware({
     tokenProvider,

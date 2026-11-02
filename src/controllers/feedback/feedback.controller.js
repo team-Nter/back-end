@@ -2,6 +2,7 @@ import { HTTP_STATUS } from '#constants';
 import { UnauthorizedException } from '#exceptions';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
+import { submissionParamsSchema } from '../submission/dto/submission.dto.js';
 import {
   createFeedbackSchema,
   feedbackParamsSchema,
@@ -21,21 +22,28 @@ export class FeedbackController extends BaseController {
     this.router.patch(
       '/:feedbackId',
       this.#authz.requireAuth,
+      validate('params', feedbackParamsSchema),
       validate('body', createFeedbackSchema),
       (req, res) => this.updateFeedback(req, res),
     );
-    this.router.delete('/:feedbackId', this.#authz.requireAuth, (req, res) =>
-      this.deleteFeedback(req, res),
+    this.router.delete(
+      '/:feedbackId',
+      this.#authz.requireAuth,
+      validate('params', feedbackParamsSchema),
+      (req, res) => this.deleteFeedback(req, res),
     );
     return this.router;
   }
 
   submissionRoutes() {
     const router = this.createRouter({ mergeParams: true });
-    router.get('/', (req, res) => this.getFeedbacks(req, res));
+    router.get('/', validate('params', submissionParamsSchema), (req, res) =>
+      this.getFeedbacks(req, res),
+    );
     router.post(
       '/',
       this.#authz.requireAuth,
+      validate('params', submissionParamsSchema),
       validate('body', createFeedbackSchema),
       (req, res) => this.createFeedback(req, res),
     );
@@ -56,8 +64,6 @@ export class FeedbackController extends BaseController {
   }
 
   async createFeedback(req, res) {
-    // 로그인 한 것 정보 가져오기
-
     const { submissionId } = req.params;
     const { content } = req.body;
 
