@@ -4,6 +4,7 @@ import {
   UserRepository,
   ChallengeRepository,
   SubmissionRepository,
+  ModerationLogRepository,
   ParticipationRepository,
   FeedbackRepository,
 } from '#repositories';
@@ -12,6 +13,7 @@ import {
   UserService,
   ChallengeService,
   SubmissionService,
+  ModerationLogService,
   ParticipationService,
   FeedbackService,
 } from '#services';
@@ -20,6 +22,7 @@ import {
   UserController,
   ChallengeController,
   SubmissionController,
+  ModerationLogController,
   ParticipationController,
   FeedbackController,
   Controller,
@@ -32,6 +35,7 @@ export const createContainer = () => {
   const userRepository = new UserRepository({ db });
   const submissionRepository = new SubmissionRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
+  const moderationLogRepository = new ModerationLogRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
   const feedbackRepository = new FeedbackRepository({ db });
 
@@ -50,7 +54,12 @@ export const createContainer = () => {
     userRepository,
     passwordProvider,
   });
-  const challengeService = new ChallengeService({ challengeRepository });
+
+  const challengeService = new ChallengeService({
+    challengeRepository,
+    moderationLogRepository,
+  });
+
   const submissionService = new SubmissionService({
     submissionRepository,
     challengeRepository,
@@ -60,11 +69,18 @@ export const createContainer = () => {
     challengeRepository,
   });
 
-  // Middlewares
   const feedbackService = new FeedbackService({
     feedbackRepository,
     submissionRepository,
   });
+
+  const moderationLogService = new ModerationLogService({
+    db,
+    challengeRepository,
+    moderationLogRepository,
+  });
+
+  // Middlewares
 
   const authMiddleware = new AuthMiddleware({
     tokenProvider,
@@ -102,11 +118,17 @@ export const createContainer = () => {
     authz: authorizationMiddleware,
   });
 
+  const moderationLogController = new ModerationLogController({
+    moderationLogService,
+    authz: authorizationMiddleware,
+  });
+
   const controller = new Controller({
     authController,
     userController,
     challengeController,
     submissionController,
+    moderationLogController,
     participationController,
     feedbackController,
   });
