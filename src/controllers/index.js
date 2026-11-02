@@ -45,8 +45,9 @@ export class Controller extends BaseController {
     );
     this.router.use(
       '/submission/:submissionId/feedbacks',
-      this.#feedbackController.routes(),
+      this.#feedbackController.submissionRoutes(),
     );
+    this.router.use('/feedback', this.#feedbackController.routes());
     this.router.get('/ping', (req, res) => this.ping(req, res));
     this.router.use('/submission', this.#submissionController.routes());
     this.router.use(

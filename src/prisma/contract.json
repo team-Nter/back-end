@@ -126,6 +126,14 @@
               {
                 "name": "SUBMISSION_CANCELED",
                 "value": "SUBMISSION_CANCELED"
+              },
+              {
+                "name": "CHALLENGE_REJECTED",
+                "value": "CHALLENGE_REJECTED"
+              },
+              {
+                "name": "CHALLENGE_APPROVED",
+                "value": "CHALLENGE_APPROVED"
               }
             ]
           },
@@ -1517,6 +1525,10 @@
                 "maxParticipants": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 15
+                  },
                   "nullable": false
                 },
                 "requestorId": {
@@ -1867,8 +1879,8 @@
             "Notification": {
               "checks": [
                 {
-                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'SUBMISSION_CANCELED')",
-                  "name": "Notification_type_check_c1afde36",
+                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'SUBMISSION_CANCELED', 'CHALLENGE_REJECTED', 'CHALLENGE_APPROVED')",
+                  "name": "Notification_type_check_89db9f38",
                   "prefix": "Notification_type_check"
                 }
               ],
@@ -2668,7 +2680,9 @@
                 "FEEDBACK_RECEIVED",
                 "SUBMISSION_LIKED",
                 "CHALLENGE_CANCELED",
-                "SUBMISSION_CANCELED"
+                "SUBMISSION_CANCELED",
+                "CHALLENGE_REJECTED",
+                "CHALLENGE_APPROVED"
               ]
             },
             "UserGrade": {
@@ -2691,7 +2705,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3f4f42440fb31011248ff9e5985a58cde57cc71ddff3077ef07201c905ea1ed1"
+    "storageHash": "1093e52d1e1a735000dc375daedf4a251b727a13b340715f2bd64d9a9bcc61f5"
   },
   "execution": {
     "executionHash": "eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2",

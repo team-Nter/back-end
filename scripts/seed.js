@@ -14,6 +14,13 @@ const ACTION_BY_STATUS = {
   CANCELED: 'CANCEL',
 };
 
+const NOTIFICATION_TYPE_BY_STATUS = {
+  APPROVED: 'CHALLENGE_APPROVED',
+  REJECTED: 'CHALLENGE_REJECTED',
+};
+
+const PARTICIPATABLE_STATUSES = ['APPROVED', 'CANCELED'];
+
 export class Seeder {
   #db;
   #numUsersToCreate;
@@ -66,7 +73,7 @@ export class Seeder {
       ]),
       documentType: faker.helpers.arrayElement(['블로그', '공식문서']),
       deadlineAt: faker.date.future().toISOString(),
-      maxParticipants: faker.number.int({ min: 3, max: 10 }), // 최대 인원 몇 명?
+      maxParticipants: 15,
       status: faker.helpers.weightedArrayElement([
         { weight: 6, value: 'APPROVED' },
         { weight: 2, value: 'PENDING' },
@@ -99,17 +106,19 @@ export class Seeder {
   }
 
   async #seedParticipations(users, challenges) {
-    const data = challenges.flatMap((challenge) => {
-      const candidates = users.filter((u) => u.id !== challenge.requestorId);
-      const joiners = faker.helpers.arrayElements(candidates, {
-        min: Math.min(1, candidates.length),
-        max: Math.min(challenge.maxParticipants, candidates.length),
-      });
+    const data = challenges
+      .filter((c) => PARTICIPATABLE_STATUSES.includes(c.status))
+      .flatMap((challenge) => {
+        const candidates = users.filter((u) => u.id !== challenge.requestorId);
+        const joiners = faker.helpers.arrayElements(candidates, {
+          min: Math.min(1, candidates.length),
+          max: Math.min(challenge.maxParticipants, candidates.length),
+        });
 
-      return joiners.map((user) =>
-        this.#makeParticipationInput(challenge.id, user.id),
-      );
-    });
+        return joiners.map((user) =>
+          this.#makeParticipationInput(challenge.id, user.id),
+        );
+      });
 
     return await this.#insert('Participation', data, [
       'id',
@@ -255,6 +264,27 @@ export class Seeder {
           feedbackId: f.id,
         }),
       ),
+
+      //
+      ...challenges
+        .filter((c) => NOTIFICATION_TYPE_BY_STATUS[c.status])
+        .map((c) =>
+          this.#makeNotificationInput({
+            recipientId: c.requestorId,
+            type: NOTIFICATION_TYPE_BY_STATUS[c.status],
+            challengeId: c.id,
+          }),
+        ),
+
+      ...participations
+        .filter((p) => challengeById.get(p.challengeId).status === 'CANCELED')
+        .map((p) =>
+          this.#makeNotificationInput({
+            recipientId: p.userId,
+            type: 'CHALLENGE_CANCELED',
+            challengeId: p.challengeId,
+          }),
+        ),
     ];
 
     return await this.#insert('Notification', data);
@@ -331,8 +361,6 @@ export class Seeder {
         '시딩 대상 DB가 허용된 조건과 일치하지 않습니다. DATABASE_URL을 확인해 주세요.',
       );
     }
-    //
-
     // 검증 완료
 
     console.log('시딩 시작');

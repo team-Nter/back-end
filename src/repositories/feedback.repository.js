@@ -6,6 +6,12 @@ export class FeedbackRepository {
     this.#db = db;
   }
 
+  findById(feedbackId) {
+    return this.#db.orm.public.Feedback.where({ id: Number(feedbackId) })
+      .select('id', 'authorId')
+      .first();
+  }
+
   findAll(submissionId, { offset, limit }) {
     return this.#db.orm.public.Feedback.where({
       submissionId: Number(submissionId),
@@ -29,6 +35,17 @@ export class FeedbackRepository {
         authorId,
         content,
       });
+  }
+
+  update(id, content) {
+    return this.#db.orm.public.Feedback.where({ id: Number(id) })
+      .select(...this.#fields)
+      .include('author', (author) => author.select('id', 'nickname', 'grade'))
+      .update({ content });
+  }
+
+  delete(id) {
+    return this.#db.orm.public.Feedback.where({ id: Number(id) }).delete();
   }
 
   async countFeedbacks(submissionId) {
