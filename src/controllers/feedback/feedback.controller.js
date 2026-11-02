@@ -9,19 +9,22 @@ import {
 
 export class FeedbackController extends BaseController {
   #feedbackService;
+  #authz;
 
-  constructor({ feedbackService }) {
+  constructor({ feedbackService, authz }) {
     super();
     this.#feedbackService = feedbackService;
+    this.#authz = authz;
   }
 
   routes() {
     this.router.patch(
       '/:feedbackId',
+      this.#authz.requireAuth,
       validate('body', createFeedbackSchema),
       (req, res) => this.updateFeedback(req, res),
     );
-    this.router.delete('/:feedbackId', (req, res) =>
+    this.router.delete('/:feedbackId', this.#authz.requireAuth, (req, res) =>
       this.deleteFeedback(req, res),
     );
     return this.router;
@@ -30,8 +33,11 @@ export class FeedbackController extends BaseController {
   submissionRoutes() {
     const router = this.createRouter({ mergeParams: true });
     router.get('/', (req, res) => this.getFeedbacks(req, res));
-    router.post('/', validate('body', createFeedbackSchema), (req, res) =>
-      this.createFeedback(req, res),
+    router.post(
+      '/',
+      this.#authz.requireAuth,
+      validate('body', createFeedbackSchema),
+      (req, res) => this.createFeedback(req, res),
     );
     return router;
   }
@@ -51,9 +57,7 @@ export class FeedbackController extends BaseController {
 
   async createFeedback(req, res) {
     // 로그인 한 것 정보 가져오기
-    if (!req.user) {
-      throw new UnauthorizedException('로그인이 필요합니다');
-    }
+
     const { submissionId } = req.params;
     const { content } = req.body;
 
@@ -67,9 +71,6 @@ export class FeedbackController extends BaseController {
   }
 
   async updateFeedback(req, res) {
-    if (!req.user) {
-      throw new UnauthorizedException('로그인이 필요합니다.');
-    }
     const { feedbackId } = req.params;
     const { content } = req.body;
 
@@ -83,9 +84,6 @@ export class FeedbackController extends BaseController {
   }
 
   async deleteFeedback(req, res) {
-    if (!req.user) {
-      throw new UnauthorizedException('로그인이 필요합니다');
-    }
     const { feedbackId } = req.params;
     await this.#feedbackService.deleteFeedback(feedbackId, req.user.id);
     return res.status(HTTP_STATUS.NO_CONTENT).send();

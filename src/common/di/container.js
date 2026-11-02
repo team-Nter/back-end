@@ -96,6 +96,7 @@ export const createContainer = () => {
   });
   const feedbackController = new FeedbackController({
     feedbackService,
+    authz: authorizationMiddleware,
   });
 
   const controller = new Controller({
