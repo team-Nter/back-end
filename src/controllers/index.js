@@ -5,13 +5,14 @@ export * from './user/index.js';
 export * from './challenge/challenge.controller.js';
 export * from './submission/index.js';
 export * from './participation/index.js';
-
+export * from './feedback/index.js';
 export class Controller extends BaseController {
   #authController;
   #userController;
   #challengeController;
   #submissionController;
   #participationController;
+  #feedbackController;
 
   constructor({
     authController,
@@ -19,6 +20,7 @@ export class Controller extends BaseController {
     challengeController,
     submissionController,
     participationController,
+    feedbackController,
   }) {
     super();
     this.#authController = authController;
@@ -26,6 +28,7 @@ export class Controller extends BaseController {
     this.#challengeController = challengeController;
     this.#submissionController = submissionController;
     this.#participationController = participationController;
+    this.#feedbackController = feedbackController;
   }
 
   routes() {
@@ -35,6 +38,10 @@ export class Controller extends BaseController {
     this.router.use(
       '/challenges/:challengeId/participants',
       this.#participationController.routes(),
+    );
+    this.router.use(
+      '/submission/:submissionId/feedbacks',
+      this.#feedbackController.routes(),
     );
     this.router.get('/ping', (req, res) => this.ping(req, res));
     this.router.use('/submission', this.#submissionController.routes());

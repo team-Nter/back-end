@@ -5,6 +5,7 @@ import {
   ChallengeRepository,
   SubmissionRepository,
   ParticipationRepository,
+  FeedbackRepository,
 } from '#repositories';
 import {
   AuthService,
@@ -12,6 +13,7 @@ import {
   ChallengeService,
   SubmissionService,
   ParticipationService,
+  FeedbackService,
 } from '#services';
 import {
   AuthController,
@@ -19,6 +21,7 @@ import {
   ChallengeController,
   SubmissionController,
   ParticipationController,
+  FeedbackController,
   Controller,
 } from '#controllers';
 import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
@@ -30,6 +33,7 @@ export const createContainer = () => {
   const submissionRepository = new SubmissionRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
+  const feedbackRepository = new FeedbackRepository({ db });
 
   // Providers
   const passwordProvider = new PasswordProvider();
@@ -57,6 +61,8 @@ export const createContainer = () => {
   });
 
   // Middlewares
+  const feedbackService = new FeedbackService({ feedbackRepository });
+
   const authMiddleware = new AuthMiddleware({
     tokenProvider,
     authService,
@@ -88,6 +94,9 @@ export const createContainer = () => {
     participationService,
     authz: authorizationMiddleware,
   });
+  const feedbackController = new FeedbackController({
+    feedbackService,
+  });
 
   const controller = new Controller({
     authController,
@@ -95,6 +104,7 @@ export const createContainer = () => {
     challengeController,
     submissionController,
     participationController,
+    feedbackController,
   });
 
   return { controller, db, authMiddleware };
