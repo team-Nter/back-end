@@ -28,6 +28,8 @@ enum NotificationType {
   SUBMISSION_LIKED
   CHALLENGE_CANCELED
   SUBMISSION_CANCELED
+  CHALLENGE_REJECTED
+  CHALLENGE_APPROVED
 }
 
 enum ModerationAction {
@@ -72,7 +74,7 @@ model Challenge {
 
   // API로 참여자 수, 도전 상태, 마감 시간 검사
   deadlineAt      TimestamptzString
-  maxParticipants Int
+  maxParticipants Int                        @default(15)
   status          ChallengeStatus            @default(PENDING) // pending / approved / rejected / canceled
   selectedAt      TimestamptzString?
   createdAt       TimestamptzString          @default(now())
@@ -89,20 +91,20 @@ model Challenge {
 }
 
 model Participation {
-  id              Int                 @id @default(autoincrement())
-  challengeId     Int
-  userId          Int?
+  id               Int               @id @default(autoincrement())
+  challengeId      Int
+  userId           Int?
 
-  joinedAt        TimestamptzString   @default(now())
+  joinedAt         TimestamptzString @default(now())
 
-  challenge       Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  submission      Submission? // 아직 번역 제출하지 않았을 때
+  challenge        Challenge         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  submission       Submission? // 아직 번역 제출하지 않았을 때
 
   submissionDrafts SubmissionDraft[]
 
   // 동시 중복 참여 방지
-  @@unique([challengeId, userId]) 
+  @@unique([challengeId, userId])
   @@index([userId, joinedAt])
 }
 
@@ -130,7 +132,7 @@ model Submission {
 model SubmissionDraft {
   id              Int                        @id @default(autoincrement())
 
-  participationId Int                       
+  participationId Int
   title           String?
   content         String                     @default("")
 
@@ -138,8 +140,8 @@ model SubmissionDraft {
   updatedAt       temporal.updatedAtString()
 
   participation   Participation              @relation(fields: [participationId], references: [id], onDelete: Cascade)
-	
-	@@index([participationId, updatedAt])  
+
+  @@index([participationId, updatedAt])
 }
 
 model SubmissionLike {
@@ -208,4 +210,3 @@ model ModerationLog {
   @@index([challengeId, createdAt])
   @@index([adminId, createdAt])
 }
-

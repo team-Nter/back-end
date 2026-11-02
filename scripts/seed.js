@@ -66,7 +66,7 @@ export class Seeder {
       ]),
       documentType: faker.helpers.arrayElement(['블로그', '공식문서']),
       deadlineAt: faker.date.future().toISOString(),
-      maxParticipants: faker.number.int({ min: 3, max: 10 }), // 최대 인원 몇 명?
+      maxParticipants: 15,
       status: faker.helpers.weightedArrayElement([
         { weight: 6, value: 'APPROVED' },
         { weight: 2, value: 'PENDING' },
@@ -255,8 +255,27 @@ export class Seeder {
           feedbackId: f.id,
         }),
       ),
-    ];
 
+      //
+      ...submissions.map((s) =>
+        this.#makeNotificationInput({
+          recipientId: challengeById.get(s.challengeId).requestorId,
+          type: 'CHALLENGE_REJECTED',
+          challengeId: s.challengeId,
+          submissionId: s.id,
+        }),
+      ),
+
+      ...submissions.map((s) =>
+        this.#makeNotificationInput({
+          recipientId: challengeById.get(s.challengeId).requestorId,
+          type: 'CHALLENGE_APPROVED',
+          challengeId: s.challengeId,
+          submissionId: s.id,
+        }),
+      ),
+    ];
+    // CHALLENGE_APPROVED CHALLENGE_REJECTED
     return await this.#insert('Notification', data);
   }
 
@@ -331,8 +350,6 @@ export class Seeder {
         '시딩 대상 DB가 허용된 조건과 일치하지 않습니다. DATABASE_URL을 확인해 주세요.',
       );
     }
-    //
-
     // 검증 완료
 
     console.log('시딩 시작');

@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'3f4f42440fb31011248ff9e5985a58cde57cc71ddff3077ef07201c905ea1ed1'>;
+  StorageHashBase<'1093e52d1e1a735000dc375daedf4a251b727a13b340715f2bd64d9a9bcc61f5'>;
 export type ExecutionHash =
   ExecutionHashBase<'eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2'>;
 export type ProfileHash =
@@ -261,14 +261,18 @@ type FieldTypeOverrides = {
             | 'FEEDBACK_RECEIVED'
             | 'SUBMISSION_LIKED'
             | 'CHALLENGE_CANCELED'
-            | 'SUBMISSION_CANCELED';
+            | 'SUBMISSION_CANCELED'
+            | 'CHALLENGE_REJECTED'
+            | 'CHALLENGE_APPROVED';
           readonly input:
             | 'CHALLENGE_PARTICIPATION'
             | 'SUBMISSION_RECEIVED'
             | 'FEEDBACK_RECEIVED'
             | 'SUBMISSION_LIKED'
             | 'CHALLENGE_CANCELED'
-            | 'SUBMISSION_CANCELED';
+            | 'SUBMISSION_CANCELED'
+            | 'CHALLENGE_REJECTED'
+            | 'CHALLENGE_APPROVED';
         };
       };
       readonly User: {
@@ -321,14 +325,18 @@ type ColumnTypeOverrides = {
           | 'FEEDBACK_RECEIVED'
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELED'
-          | 'SUBMISSION_CANCELED';
+          | 'SUBMISSION_CANCELED'
+          | 'CHALLENGE_REJECTED'
+          | 'CHALLENGE_APPROVED';
         readonly input:
           | 'CHALLENGE_PARTICIPATION'
           | 'SUBMISSION_RECEIVED'
           | 'FEEDBACK_RECEIVED'
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELED'
-          | 'SUBMISSION_CANCELED';
+          | 'SUBMISSION_CANCELED'
+          | 'CHALLENGE_REJECTED'
+          | 'CHALLENGE_APPROVED';
       };
     };
     readonly User: {
@@ -571,6 +579,10 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 15>;
+                  };
                   readonly many: false;
                 };
                 readonly requestorId: {
@@ -1430,6 +1442,8 @@ type ContractBase = Omit<
                 'SUBMISSION_LIKED',
                 'CHALLENGE_CANCELED',
                 'SUBMISSION_CANCELED',
+                'CHALLENGE_REJECTED',
+                'CHALLENGE_APPROVED',
               ];
             };
             readonly UserGrade: {
@@ -2365,6 +2379,8 @@ type ContractBase = Omit<
               { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
               { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
               { readonly name: 'SUBMISSION_CANCELED'; readonly value: 'SUBMISSION_CANCELED' },
+              { readonly name: 'CHALLENGE_REJECTED'; readonly value: 'CHALLENGE_REJECTED' },
+              { readonly name: 'CHALLENGE_APPROVED'; readonly value: 'CHALLENGE_APPROVED' },
             ];
           };
           readonly UserGrade: {
@@ -2406,6 +2422,8 @@ type ContractBase = Omit<
             { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
             { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
             { readonly name: 'SUBMISSION_CANCELED'; readonly value: 'SUBMISSION_CANCELED' },
+            { readonly name: 'CHALLENGE_REJECTED'; readonly value: 'CHALLENGE_REJECTED' },
+            { readonly name: 'CHALLENGE_APPROVED'; readonly value: 'CHALLENGE_APPROVED' },
           ];
           readonly UserGrade: readonly [
             { readonly name: 'EXPERT'; readonly value: 'EXPERT' },
