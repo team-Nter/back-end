@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from '../../../common/schemas/id.schema.js';
 
 export const submissionSchema = z.object({
   // TODO: 인증·참여 기능 연결 후 서버에서 참여 ID를 조회하도록 변경
@@ -19,3 +20,5 @@ export const updateSubmissionSchema = submissionSchema
   .refine((v) => v.title !== undefined || v.content !== undefined, {
     message: '수정할 내용이 필요합니다.',
   });
+
+export const submissionParamsSchema = z.object({ submissionId: idSchema });
