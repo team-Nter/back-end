@@ -13,6 +13,7 @@ import {
   UserService,
   ChallengeService,
   SubmissionService,
+  ModerationLogService,
   ParticipationService,
   FeedbackService,
 } from '#services';
@@ -21,6 +22,7 @@ import {
   UserController,
   ChallengeController,
   SubmissionController,
+  ModerationLogController,
   ParticipationController,
   FeedbackController,
   Controller,
@@ -57,6 +59,7 @@ export const createContainer = () => {
     challengeRepository,
     moderationLogRepository,
   });
+
   const submissionService = new SubmissionService({
     submissionRepository,
     challengeRepository,
@@ -66,8 +69,15 @@ export const createContainer = () => {
     challengeRepository,
   });
 
-  // Middlewares
   const feedbackService = new FeedbackService({ feedbackRepository });
+
+  const moderationLogService = new ModerationLogService({
+    db,
+    challengeRepository,
+    moderationLogRepository,
+  });
+
+  // Middlewares
 
   const authMiddleware = new AuthMiddleware({
     tokenProvider,
@@ -104,11 +114,17 @@ export const createContainer = () => {
     feedbackService,
   });
 
+  const moderationLogController = new ModerationLogController({
+    moderationLogService,
+    authz: authorizationMiddleware,
+  });
+
   const controller = new Controller({
     authController,
     userController,
     challengeController,
     submissionController,
+    moderationLogController,
     participationController,
     feedbackController,
   });

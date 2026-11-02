@@ -146,10 +146,6 @@ export class ChallengeService {
     };
   }
 
-  //async moderateChallenge(id, adminId, { action, reason }) {}
-
-  //async updateChallenge(id, adminId, data) {}
-
   #buildAdminFilters({ status, keyword } = {}) {
     return {
       statuses: status ? [status] : CHALLENGE_STATUSES,

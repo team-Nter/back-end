@@ -20,6 +20,7 @@ export class ChallengeRepository {
     'maxParticipants',
     'status',
     'createdAt',
+    'updatedAt',
   ];
 
   constructor({ db }) {
