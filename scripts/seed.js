@@ -19,6 +19,8 @@ const NOTIFICATION_TYPE_BY_STATUS = {
   REJECTED: 'CHALLENGE_REJECTED',
 };
 
+const PARTICIPATABLE_STATUSES = ['APPROVED', 'CANCELED'];
+
 export class Seeder {
   #db;
   #numUsersToCreate;
@@ -104,17 +106,19 @@ export class Seeder {
   }
 
   async #seedParticipations(users, challenges) {
-    const data = challenges.flatMap((challenge) => {
-      const candidates = users.filter((u) => u.id !== challenge.requestorId);
-      const joiners = faker.helpers.arrayElements(candidates, {
-        min: Math.min(1, candidates.length),
-        max: Math.min(challenge.maxParticipants, candidates.length),
-      });
+    const data = challenges
+      .filter((c) => PARTICIPATABLE_STATUSES.includes(c.status))
+      .flatMap((challenge) => {
+        const candidates = users.filter((u) => u.id !== challenge.requestorId);
+        const joiners = faker.helpers.arrayElements(candidates, {
+          min: Math.min(1, candidates.length),
+          max: Math.min(challenge.maxParticipants, candidates.length),
+        });
 
-      return joiners.map((user) =>
-        this.#makeParticipationInput(challenge.id, user.id),
-      );
-    });
+        return joiners.map((user) =>
+          this.#makeParticipationInput(challenge.id, user.id),
+        );
+      });
 
     return await this.#insert('Participation', data, [
       'id',
@@ -269,6 +273,16 @@ export class Seeder {
             recipientId: c.requestorId,
             type: NOTIFICATION_TYPE_BY_STATUS[c.status],
             challengeId: c.id,
+          }),
+        ),
+
+      ...participations
+        .filter((p) => challengeById.get(p.challengeId).status === 'CANCELED')
+        .map((p) =>
+          this.#makeNotificationInput({
+            recipientId: p.userId,
+            type: 'CHALLENGE_CANCELED',
+            challengeId: p.challengeId,
           }),
         ),
     ];
