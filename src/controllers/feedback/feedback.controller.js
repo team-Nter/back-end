@@ -1,5 +1,4 @@
 import { HTTP_STATUS } from '#constants';
-import { UnauthorizedException } from '#exceptions';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
 import { submissionParamsSchema } from '../submission/dto/submission.dto.js';
