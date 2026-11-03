@@ -21,6 +21,17 @@ export class ParticipationRepository {
     return totalCount;
   }
 
+  async findUserIdsByChallengeId(challenge, { tx } = {}) {
+    const rows = await this.#orm(tx)
+      .Participation.where({
+        challengeId: Number(challenge),
+      })
+      .select('userId')
+      .all();
+
+    return rows.map((row) => row.userId).filter((userId) => userId !== null);
+  }
+
   create({ challengeId, userId }, { tx } = {}) {
     return this.#orm(tx)
       .Participation.select(...this.#fields)
