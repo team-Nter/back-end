@@ -51,6 +51,22 @@ export class ParticipationRepository {
       .first();
   }
 
+  // 행 잠금 위해 작성
+  findByChallengeIdAndUserIdForUpdate({ challengeId, userId }, { tx } = {}) {
+    if (!tx) {
+      throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');
+    }
+
+    return this.#orm(tx)
+      .Participation.where({
+        challengeId: Number(challengeId),
+        userId: Number(userId),
+      })
+      .select(...this.#fields)
+      .forNoKeyUpdate()
+      .first();
+  }
+
   deleteByChallengeIdAndUserId({ challengeId, userId }) {
     return this.#orm()
       .Participation.where({

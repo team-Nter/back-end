@@ -2,8 +2,6 @@ import { z } from 'zod';
 import { idSchema } from '../../../common/schemas/id.schema.js';
 
 export const submissionSchema = z.object({
-  // TODO: 인증·참여 기능 연결 후 서버에서 참여 ID를 조회하도록 변경
-  participationId: z.number().int().positive(),
   title: z
     .string({ error: '제목은 필수입니다.' })
     .trim()
