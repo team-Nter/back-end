@@ -7,6 +7,7 @@ import {
   ModerationLogRepository,
   ParticipationRepository,
   FeedbackRepository,
+  NotificationRepository,
 } from '#repositories';
 import {
   AuthService,
@@ -16,6 +17,7 @@ import {
   ModerationLogService,
   ParticipationService,
   FeedbackService,
+  NotificationService,
 } from '#services';
 import {
   AuthController,
@@ -38,6 +40,7 @@ export const createContainer = () => {
   const moderationLogRepository = new ModerationLogRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
   const feedbackRepository = new FeedbackRepository({ db });
+  const notificationRepository = new NotificationRepository({ db });
 
   // Providers
   const passwordProvider = new PasswordProvider();
@@ -78,6 +81,12 @@ export const createContainer = () => {
     db,
     challengeRepository,
     moderationLogRepository,
+    notificationRepository,
+    participationRepository,
+  });
+
+  const notificationService = new NotificationService({
+    notificationRepository,
   });
 
   // Middlewares
@@ -99,6 +108,7 @@ export const createContainer = () => {
   const userController = new UserController({
     userService,
     challengeService,
+    notificationService,
     authz: authorizationMiddleware,
   });
   const submissionController = new SubmissionController({
