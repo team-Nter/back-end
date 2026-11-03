@@ -8,7 +8,7 @@ export class FeedbackRepository {
 
   findById(feedbackId) {
     return this.#db.orm.public.Feedback.where({ id: Number(feedbackId) })
-      .select('id', 'authorId')
+      .select('id', 'authorId', 'submissionId')
       .first();
   }
 

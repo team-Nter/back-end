@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '#exceptions';
@@ -7,10 +8,16 @@ import {
 export class FeedbackService {
   #feedbackRepository;
   #submissionRepository;
+  #challengeRepository;
 
-  constructor({ feedbackRepository, submissionRepository }) {
+  constructor({
+    feedbackRepository,
+    submissionRepository,
+    challengeRepository,
+  }) {
     this.#feedbackRepository = feedbackRepository;
     this.#submissionRepository = submissionRepository;
+    this.#challengeRepository = challengeRepository;
   }
 
   async getFeedbacks(submissionId, page = 1, pageSize = 10) {
@@ -61,7 +68,18 @@ export class FeedbackService {
     if (!submission) {
       throw new NotFoundException('제출물을 찾을 수 없습니다');
     }
+    const challenge = await this.#challengeRepository.findById(
+      submission.challengeId,
+    );
 
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다');
+    }
+    if (challenge.status !== 'APPROVED') {
+      throw new ConflictException(
+        '승인된 챌린지의 제출물에만 피드백을 작성할 수 있습니다.',
+      );
+    }
     return await this.#feedbackRepository.create(
       submissionId,
       authorId,
@@ -80,6 +98,28 @@ export class FeedbackService {
         '본인이 작성한 피드백만 수정할 수 있습니다.',
       );
     }
+    const submission = await this.#submissionRepository.findById(
+      feedback.submissionId,
+    );
+
+    if (!submission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
+    }
+
+    const challenge = await this.#challengeRepository.findById(
+      submission.challengeId,
+    );
+
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다');
+    }
+
+    if (challenge.status !== 'APPROVED') {
+      throw new ConflictException(
+        '승인된 챌린지의 피드백만 수정할 수 있습니다.',
+      );
+    }
+
     return await this.#feedbackRepository.update(feedbackId, content);
   }
 

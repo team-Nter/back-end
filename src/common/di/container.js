@@ -73,6 +73,7 @@ export const createContainer = () => {
   const feedbackService = new FeedbackService({
     feedbackRepository,
     submissionRepository,
+    challengeRepository,
   });
 
   const moderationLogService = new ModerationLogService({
