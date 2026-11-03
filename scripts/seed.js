@@ -94,6 +94,7 @@ export class Seeder {
       'requestorId',
       'status',
       'maxParticipants',
+      'deadlineAt',
     ]);
   }
 
@@ -176,6 +177,55 @@ export class Seeder {
       'userId',
       'submissionId',
     ]);
+  }
+
+  async #seedSelections(challenges, submissions, likes) {
+    const now = new Date();
+
+    const closedChallenges = challenges.filter(
+      (c) => c.status === 'APPROVED' && new Date(c.deadlineAt) <= now,
+    );
+
+    // 절반만 채택 완료 처리, 나머지는 "마감 후 처음 조회 시 채택" 테스트용으로 남김
+    const processedChallenges = closedChallenges.filter(() =>
+      faker.datatype.boolean(),
+    );
+
+    const likeCountBySubmissionId = new Map();
+    for (const like of likes) {
+      const count = likeCountBySubmissionId.get(like.submissionId) ?? 0;
+      likeCountBySubmissionId.set(like.submissionId, count + 1);
+    }
+    const likeCountOf = (submission) =>
+      likeCountBySubmissionId.get(submission.id) ?? 0;
+
+    const selectedIds = processedChallenges.flatMap((challenge) => {
+      const candidates = submissions.filter(
+        (s) => s.challengeId === challenge.id,
+      );
+      const maxLikes = Math.max(0, ...candidates.map(likeCountOf));
+
+      if (maxLikes === 0) return [];
+
+      // 동점이면 모두 채택
+      return candidates
+        .filter((s) => likeCountOf(s) === maxLikes)
+        .map((s) => s.id);
+    });
+
+    const processedIds = processedChallenges.map((c) => c.id);
+
+    if (processedIds.length > 0) {
+      await this.#db.orm.public.Challenge.where((c) =>
+        c.id.in(processedIds),
+      ).updateAll({ selectedAt: now.toISOString() });
+    }
+
+    if (selectedIds.length > 0) {
+      await this.#db.orm.public.Submission.where((s) =>
+        s.id.in(selectedIds),
+      ).updateAll({ isSelected: true });
+    }
   }
 
   #makeFeedbackInput(submissionId, authorId) {
@@ -386,6 +436,7 @@ export class Seeder {
 
     const likes = await this.#seedSubmissionLikes(users, submissions);
     const feedbacks = await this.#seedFeedbacks(users, submissions);
+    await this.#seedSelections(challenges, submissions, likes);
 
     await this.#seedNotifications({
       challenges,
