@@ -4,6 +4,7 @@ import { validate } from '#middlewares';
 import {
   challengeIdParamSchema,
   createChallengeSchema,
+  challengeListQuerySchema,
   adminChallengeListQuerySchema,
   adminChallengeDetailQuerySchema,
 } from './dto/challenge.dto.js';
@@ -24,6 +25,12 @@ export class ChallengeController extends BaseController {
       this.#authz.requireAuth,
       validate('body', createChallengeSchema),
       (req, res) => this.createChallenge(req, res),
+    );
+
+    this.router.get(
+      '/',
+      validate('query', challengeListQuerySchema),
+      (req, res) => this.getChallenges(req, res),
     );
 
     this.router.delete(
@@ -58,6 +65,11 @@ export class ChallengeController extends BaseController {
       req.body,
     );
     res.status(HTTP_STATUS.CREATED).json(newChallenge);
+  }
+
+  async getChallenges(req, res) {
+    const challenges = await this.#challengeService.getChallenges(req.query);
+    res.status(HTTP_STATUS.OK).json(challenges);
   }
 
   async deleteMyChallenge(req, res) {
