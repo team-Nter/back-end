@@ -7,7 +7,7 @@ import { CHALLENGE_CATEGORIES, DOCUMENT_TYPES } from '#constants';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
-const CHALLENGES_PER_USER = 2;
+const CHALLENGES_PER_USER = 20;
 
 const ACTION_BY_STATUS = {
   APPROVED: 'APPROVE',
@@ -68,8 +68,11 @@ export class Seeder {
       description: faker.lorem.paragraph(5),
       category: faker.helpers.arrayElement(CHALLENGE_CATEGORIES),
       documentType: faker.helpers.arrayElement(DOCUMENT_TYPES),
-      deadlineAt: faker.date.future().toISOString(),
-      maxParticipants: 15,
+      deadlineAt: (faker.datatype.boolean({ probability: 0.7 })
+        ? faker.date.future()
+        : faker.date.past()
+      ).toISOString(),
+      maxParticipants: faker.number.int({ min: 3, max: 10 }),
       status: faker.helpers.weightedArrayElement([
         { weight: 6, value: 'APPROVED' },
         { weight: 2, value: 'PENDING' },
@@ -401,7 +404,7 @@ const db = postgres({
   url: process.env.DATABASE_URL,
 });
 
-const seeder = new Seeder(db, 5);
+const seeder = new Seeder(db, 10);
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seeder
