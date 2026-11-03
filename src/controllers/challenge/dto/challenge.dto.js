@@ -60,6 +60,40 @@ export const myChallengeListQuerySchema = z.object({
   keyword: z.string().trim().optional(),
 });
 
+export const challengeListQuerySchema = z.object({
+  category: z
+    .string()
+    .transform((value) => value.split(',').map((item) => item.trim()))
+    .pipe(
+      z.array(
+        z.enum(CHALLENGE_CATEGORIES, {
+          error:
+            'category는 NEXTJS, MODERN_JS, API, WEB, CAREER 중에서 골라야 합니다.',
+        }),
+      ),
+    )
+    .optional(),
+  documentType: z
+    .enum(DOCUMENT_TYPES, {
+      error: 'documentType은 OFFICIAL_DOCUMENT, BLOG 중 하나여야 합니다.',
+    })
+    .optional(),
+  progress: z
+    .enum(['open', 'closed'], {
+      error: 'progress는 open, closed 중 하나여야 합니다.',
+    })
+    .optional(),
+  sort: z
+    .enum(ADMIN_CHALLENGE_SORTS, {
+      error:
+        'sort는 createdAtDesc, createdAtAsc, deadlineAsc, deadlineDesc 중 하나여야 합니다.',
+    })
+    .default('createdAtDesc'),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  keyword: z.string().trim().optional(),
+});
+
 export const adminChallengeListQuerySchema = z.object({
   status: z
     .enum(CHALLENGE_STATUSES, {

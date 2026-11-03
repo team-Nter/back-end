@@ -3,10 +3,11 @@ import postgres from '@prisma/orm-postgres/runtime';
 import bcrypt from 'bcrypt';
 import contractJson from '../src/prisma/contract.json' with { type: 'json' };
 import { fileURLToPath } from 'node:url';
+import { CHALLENGE_CATEGORIES, DOCUMENT_TYPES } from '#constants';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
-const CHALLENGES_PER_USER = 2;
+const CHALLENGES_PER_USER = 20;
 
 const ACTION_BY_STATUS = {
   APPROVED: 'APPROVE',
@@ -65,15 +66,13 @@ export class Seeder {
       title: faker.lorem.sentence(5),
       sourceUrl: faker.internet.url(),
       description: faker.lorem.paragraph(5),
-      category: faker.helpers.arrayElement([
-        'next.js',
-        'web',
-        'api',
-        'modernJS',
-      ]),
-      documentType: faker.helpers.arrayElement(['블로그', '공식문서']),
-      deadlineAt: faker.date.future().toISOString(),
-      maxParticipants: 15,
+      category: faker.helpers.arrayElement(CHALLENGE_CATEGORIES),
+      documentType: faker.helpers.arrayElement(DOCUMENT_TYPES),
+      deadlineAt: (faker.datatype.boolean({ probability: 0.7 })
+        ? faker.date.future()
+        : faker.date.past()
+      ).toISOString(),
+      maxParticipants: faker.number.int({ min: 3, max: 10 }),
       status: faker.helpers.weightedArrayElement([
         { weight: 6, value: 'APPROVED' },
         { weight: 2, value: 'PENDING' },
@@ -95,6 +94,7 @@ export class Seeder {
       'requestorId',
       'status',
       'maxParticipants',
+      'deadlineAt',
     ]);
   }
 
@@ -177,6 +177,55 @@ export class Seeder {
       'userId',
       'submissionId',
     ]);
+  }
+
+  async #seedSelections(challenges, submissions, likes) {
+    const now = new Date();
+
+    const closedChallenges = challenges.filter(
+      (c) => c.status === 'APPROVED' && new Date(c.deadlineAt) <= now,
+    );
+
+    // 절반만 채택 완료 처리, 나머지는 "마감 후 처음 조회 시 채택" 테스트용으로 남김
+    const processedChallenges = closedChallenges.filter(() =>
+      faker.datatype.boolean(),
+    );
+
+    const likeCountBySubmissionId = new Map();
+    for (const like of likes) {
+      const count = likeCountBySubmissionId.get(like.submissionId) ?? 0;
+      likeCountBySubmissionId.set(like.submissionId, count + 1);
+    }
+    const likeCountOf = (submission) =>
+      likeCountBySubmissionId.get(submission.id) ?? 0;
+
+    const selectedIds = processedChallenges.flatMap((challenge) => {
+      const candidates = submissions.filter(
+        (s) => s.challengeId === challenge.id,
+      );
+      const maxLikes = Math.max(0, ...candidates.map(likeCountOf));
+
+      if (maxLikes === 0) return [];
+
+      // 동점이면 모두 채택
+      return candidates
+        .filter((s) => likeCountOf(s) === maxLikes)
+        .map((s) => s.id);
+    });
+
+    const processedIds = processedChallenges.map((c) => c.id);
+
+    if (processedIds.length > 0) {
+      await this.#db.orm.public.Challenge.where((c) =>
+        c.id.in(processedIds),
+      ).updateAll({ selectedAt: now.toISOString() });
+    }
+
+    if (selectedIds.length > 0) {
+      await this.#db.orm.public.Submission.where((s) =>
+        s.id.in(selectedIds),
+      ).updateAll({ isSelected: true });
+    }
   }
 
   #makeFeedbackInput(submissionId, authorId) {
@@ -387,6 +436,7 @@ export class Seeder {
 
     const likes = await this.#seedSubmissionLikes(users, submissions);
     const feedbacks = await this.#seedFeedbacks(users, submissions);
+    await this.#seedSelections(challenges, submissions, likes);
 
     await this.#seedNotifications({
       challenges,
@@ -405,7 +455,7 @@ const db = postgres({
   url: process.env.DATABASE_URL,
 });
 
-const seeder = new Seeder(db, 5);
+const seeder = new Seeder(db, 10);
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seeder
