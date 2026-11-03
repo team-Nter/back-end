@@ -6,16 +6,22 @@ import {
   challengeIdParamSchema,
   myChallengeListQuerySchema,
 } from '../challenge/dto/challenge.dto.js';
+import {
+  myNotificationListQuerySchema,
+  notificationIdParamSchema,
+} from './dto/notification.dto.js';
 
 export class UserController extends BaseController {
   #userService;
   #challengeService;
+  #notificationService;
   #authz;
 
-  constructor({ userService, challengeService, authz }) {
+  constructor({ userService, challengeService, notificationService, authz }) {
     super();
     this.#userService = userService;
     this.#challengeService = challengeService;
+    this.#notificationService = notificationService;
     this.#authz = authz;
   }
 
@@ -32,6 +38,23 @@ export class UserController extends BaseController {
       this.#authz.requireAuth,
       validate('params', challengeIdParamSchema),
       (req, res) => this.getMyChallengeDetail(req, res),
+    );
+    this.router.get(
+      '/me/notifications',
+      this.#authz.requireAuth,
+      validate('query', myNotificationListQuerySchema),
+      (req, res) => this.getMyNotifications(req, res),
+    );
+    this.router.patch(
+      '/me/notifications/read-all',
+      this.#authz.requireAuth,
+      (req, res) => this.readAllNotifications(req, res),
+    );
+    this.router.patch(
+      '/me/notifications/:notificationId/read',
+      this.#authz.requireAuth,
+      validate('params', notificationIdParamSchema),
+      (req, res) => this.readNotification(req, res),
     );
     this.router.get(
       '/:userId',
@@ -84,4 +107,24 @@ export class UserController extends BaseController {
     res.status(HTTP_STATUS.OK).json(myChallengeDetail);
   }
 
+  async getMyNotifications(req, res) {
+    const result = await this.#notificationService.getMyNotifications(
+      req.user.id,
+      req.query,
+    );
+    res.status(HTTP_STATUS.OK).json(result);
+  }
+
+  async readNotification(req, res) {
+    await this.#notificationService.readNotification(
+      req.user.id,
+      req.params.notificationId,
+    );
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  }
+
+  async readAllNotifications(req, res) {
+    await this.#notificationService.readAllNotifications(req.user.id);
+    res.status(HTTP_STATUS.NO_CONTENT).send();
+  }
 }
