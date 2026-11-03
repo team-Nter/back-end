@@ -3,6 +3,7 @@ import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
 import { challengeIdParamSchema } from '../challenge/dto/challenge.dto.js';
 import {
+  submissionParamsSchema,
   submissionSchema,
   updateSubmissionSchema,
 } from './dto/submission.dto.js';
@@ -20,18 +21,21 @@ export class SubmissionController extends BaseController {
   routes() {
     this.router.get(
       '/:submissionId',
-      validate('params', submissionSchema),
+      validate('params', submissionParamsSchema),
       (req, res) => this.getSubmission(req, res),
     );
     this.router.patch(
       '/:submissionId',
       this.#authz.requireAuth,
-      validate('params', submissionSchema),
+      validate('params', submissionParamsSchema),
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
     );
-    this.router.delete('/:submissionId', this.#authz.requireAuth, (req, res) =>
-      this.deleteSubmission(req, res),
+    this.router.delete(
+      '/:submissionId',
+      this.#authz.requireAuth,
+      validate('params', submissionParamsSchema),
+      (req, res) => this.deleteSubmission(req, res),
     );
 
     return this.router;

@@ -16,8 +16,10 @@ export class SubmissionRepository {
   }
 
   // findById
-  findById(id) {
-    return this.#db.orm.public.Submission.where({ id: Number(id) })
+  findById(id, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.Submission.where({ id: Number(id) })
       .select(...this.#fields)
       .include('likes', (likes) => likes.count())
       .include('feedbacks', (feedbacks) => feedbacks.count())
@@ -27,6 +29,21 @@ export class SubmissionRepository {
           .include('user', (user) => user.select('id', 'nickname', 'grade')),
       )
       .first();
+  }
+
+  async findByIdForUpdate(id, { tx } = {}) {
+    if (!tx) {
+      throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');
+    }
+
+    const submission = await tx.orm.public.Submission.where({ id: Number(id) })
+      .select('id')
+      .forNoKeyUpdate()
+      .first();
+
+    if (!submission) return null;
+
+    return this.findById(id, { tx });
   }
 
   // findByChallengeId
@@ -60,8 +77,10 @@ export class SubmissionRepository {
   }
 
   // create
-  create(challengeId, data) {
-    return this.#db.orm.public.Submission.select(...this.#fields)
+  create(challengeId, data, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.Submission.select(...this.#fields)
       .include('participation', (participation) =>
         participation
           .select('id')
@@ -77,14 +96,18 @@ export class SubmissionRepository {
   }
   // update
 
-  update(id, data) {
-    return this.#db.orm.public.Submission.where({ id: Number(id) })
+  update(id, data, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.Submission.where({ id: Number(id) })
       .select(...this.#fields)
       .update(data);
   }
   //delete
 
-  delete(id) {
-    return this.#db.orm.public.Submission.where({ id: Number(id) }).delete();
+  delete(id, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.Submission.where({ id: Number(id) }).delete();
   }
 }

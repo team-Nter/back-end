@@ -6,15 +6,18 @@ import {
 } from '#exceptions';
 
 export class SubmissionService {
+  #db;
   #submissionRepository;
   #challengeRepository;
   #participationRepository;
 
   constructor({
+    db,
     submissionRepository,
     challengeRepository,
     participationRepository,
   }) {
+    this.#db = db;
     this.#submissionRepository = submissionRepository;
     this.#challengeRepository = challengeRepository;
     this.#participationRepository = participationRepository;
@@ -110,106 +113,134 @@ export class SubmissionService {
   }
 
   async createSubmission(challengeId, userId, data) {
-    const challenge = await this.#challengeRepository.findById(challengeId);
-    if (!challenge) {
-      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
-    }
-
-    if (
-      challenge.status !== 'APPROVED' ||
-      new Date(challenge.deadlineAt).getTime() <= Date.now()
-    ) {
-      throw new ConflictException('제출할 수 없는 챌린지입니다.');
-    }
-
-    const userParticipation =
-      await this.#participationRepository.findByChallengeIdAndUserId({
+    return this.#db.transaction(async (tx) => {
+      const challenge = await this.#challengeRepository.findByIdForUpdate(
         challengeId,
-        userId,
-      });
-
-    if (!userParticipation) {
-      throw new ForbiddenException(
-        '챌린지 참여자만 작업물을 제출할 수 있습니다.',
+        { tx },
       );
-    }
 
-    const submission = await this.#submissionRepository.create(challengeId, {
-      title: data.title,
-      content: data.content,
-      participationId: userParticipation.id,
+      if (!challenge) {
+        throw new NotFoundException('챌린지를 찾을 수 없습니다');
+      }
+
+      if (
+        challenge.status !== 'APPROVED' ||
+        new Date(challenge.deadlineAt).getTime() <= Date.now()
+      ) {
+        throw new ConflictException('제출할 수 없는 챌린지입니다.');
+      }
+
+      // 참여 관련
+      const participation =
+        await this.#participationRepository.findByChallengeIdAndUserIdForUpdate(
+          { challengeId, userId },
+          { tx },
+        );
+      if (!participation) {
+        throw new ForbiddenException(
+          '챌린지 참여자만 작업물을 제출할 수 있습니다.',
+        );
+      }
+
+      if (new Date(challenge.deadlineAt).getTime() <= Date.now()) {
+        throw new ConflictException('마감된 챌린지입니다.');
+      }
+
+      const submission = await this.#submissionRepository.create(
+        challengeId,
+        {
+          title: data.title,
+          content: data.content,
+          participationId: participation.id,
+        },
+        { tx },
+      );
+
+      if (!submission) {
+        throw new Error('작업물 생성에 실패했습니다.');
+      }
+
+      const { participation: authorParticipation, ...rest } = submission;
+      const user = authorParticipation.user;
+
+      return {
+        ...rest,
+        author: user
+          ? {
+              id: user.id,
+              nickname: user.nickname,
+              grade: user.grade,
+            }
+          : null,
+      };
     });
-
-    if (!submission) {
-      throw new Error('작업물 생성에 실패했습니다');
-    }
-
-    const { participation, ...rest } = submission;
-
-    const user = participation.user;
-
-    return {
-      ...rest,
-      author: user
-        ? {
-            id: user.id,
-            nickname: user.nickname,
-            grade: user.grade,
-          }
-        : null,
-    };
   }
 
   async updateSubmission(submissionId, userId, data) {
-    const existingSubmission =
-      await this.#submissionRepository.findById(submissionId);
+    // 검증 구간에서 트랜잭션 필요하기에 나눔.
+    return this.#db.transaction(async (tx) => {
+      await this.#validateSubmissionChange(submissionId, userId, '수정', {
+        tx,
+      });
 
-    if (!existingSubmission) {
-      throw new NotFoundException('작업물을 찾을 수 없습니다');
-    }
+      const submission = await this.#submissionRepository.update(
+        submissionId,
+        { title: data.title, content: data.content },
+        { tx },
+      );
+      if (!submission) {
+        throw new Error('작업물 수정에 실패했습니다.');
+      }
 
-    const authorId = existingSubmission.participation?.user?.id;
-    if (authorId === undefined || authorId === null || authorId !== userId) {
-      throw new ForbiddenException('본인이 작성한 작업물만 수정이 가능합니다');
-    }
-
-    await this.#validateSubmissionChange(existingSubmission);
-
-    const submission = await this.#submissionRepository.update(
-      submissionId,
-      data,
-    );
-    if (!submission) {
-      throw new Error('작업물 수정에 실패했습니다.');
-    }
-
-    return submission;
+      return submission;
+    });
   }
 
   async deleteSubmission(submissionId, userId) {
-    const existingSubmission =
-      await this.#submissionRepository.findById(submissionId);
+    return this.#db.transaction(async (tx) => {
+      await this.#validateSubmissionChange(submissionId, userId, '삭제', {
+        tx,
+      });
+      await this.#submissionRepository.delete(submissionId, { tx });
+    });
+  }
+
+  async #validateSubmissionChange(submissionId, userId, action, { tx }) {
+    const existingSubmission = await this.#submissionRepository.findById(
+      submissionId,
+      { tx },
+    );
     if (!existingSubmission) {
       throw new NotFoundException('작업물을 찾을 수 없습니다');
     }
 
-    const authorId = existingSubmission.participation?.user?.id;
-    if (authorId === undefined || authorId === null || authorId !== userId) {
-      throw new ForbiddenException('본인이 작성한 작업물만 삭제가 가능합니다');
-    }
-
-    await this.#validateSubmissionChange(existingSubmission);
-
-    await this.#submissionRepository.delete(submissionId);
-  }
-
-  async #validateSubmissionChange(submission) {
-    const challenge = await this.#challengeRepository.findById(
-      submission.challengeId,
+    const challenge = await this.#challengeRepository.findByIdForUpdate(
+      existingSubmission.challengeId,
+      { tx },
     );
-
     if (!challenge) {
       throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    const submission = await this.#submissionRepository.findByIdForUpdate(
+      submissionId,
+      { tx },
+    );
+    if (!submission) {
+      throw new NotFoundException('작업물을 찾을 수 없습니다');
+    }
+
+    const authorId = submission.participation?.user?.id;
+    if (authorId === undefined || authorId === null || authorId !== userId) {
+      throw new ForbiddenException(
+        `본인이 작성한 작업물만 ${action}이 가능합니다`,
+      );
+    }
+
+    if (submission.challengeId !== existingSubmission.challengeId) {
+      throw new ConflictException(
+        '작업물의 챌린지가 변경되었습니다. 다시 시도해주세요.',
+      );
     }
 
     if (
