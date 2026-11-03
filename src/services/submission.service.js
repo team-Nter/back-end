@@ -173,6 +173,8 @@ export class SubmissionService {
       throw new ForbiddenException('본인이 작성한 작업물만 수정이 가능합니다');
     }
 
+    await this.#validateSubmissionChange(existingSubmission);
+
     const submission = await this.#submissionRepository.update(
       submissionId,
       data,
@@ -196,6 +198,33 @@ export class SubmissionService {
       throw new ForbiddenException('본인이 작성한 작업물만 삭제가 가능합니다');
     }
 
+    await this.#validateSubmissionChange(existingSubmission);
+
     await this.#submissionRepository.delete(submissionId);
+  }
+
+  async #validateSubmissionChange(submission) {
+    const challenge = await this.#challengeRepository.findById(
+      submission.challengeId,
+    );
+
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    if (
+      challenge.status !== 'APPROVED' ||
+      new Date(challenge.deadlineAt).getTime() <= Date.now()
+    ) {
+      throw new ConflictException(
+        '마감되었거나 진행 중이 아닌 챌린지의 작업물은 수정하거나 삭제할 수 없습니다.',
+      );
+    }
+
+    if (submission.isSelected) {
+      throw new ConflictException(
+        '선정된 작업물은 수정하거나 삭제할 수 없습니다.',
+      );
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from '#constants';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
+import { challengeIdParamSchema } from '../challenge/dto/challenge.dto.js';
 import {
   submissionSchema,
   updateSubmissionSchema,
@@ -17,12 +18,15 @@ export class SubmissionController extends BaseController {
   }
 
   routes() {
-    this.router.get('/:submissionId', (req, res) =>
-      this.getSubmission(req, res),
+    this.router.get(
+      '/:submissionId',
+      validate('params', submissionSchema),
+      (req, res) => this.getSubmission(req, res),
     );
     this.router.patch(
       '/:submissionId',
       this.#authz.requireAuth,
+      validate('params', submissionSchema),
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
     );
@@ -36,10 +40,13 @@ export class SubmissionController extends BaseController {
   challengeRoutes() {
     const router = this.createRouter({ mergeParams: true });
 
-    router.get('/', (req, res) => this.getSubmissions(req, res));
+    router.get('/', validate('params', challengeIdParamSchema), (req, res) =>
+      this.getSubmissions(req, res),
+    );
     router.post(
       '/',
       this.#authz.requireAuth,
+      validate('params', challengeIdParamSchema),
       validate('body', submissionSchema),
       (req, res) => this.createSubmission(req, res),
     );
