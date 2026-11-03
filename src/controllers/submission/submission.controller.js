@@ -1,7 +1,9 @@
 import { HTTP_STATUS } from '#constants';
 import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
+import { challengeIdParamSchema } from '../challenge/dto/challenge.dto.js';
 import {
+  submissionParamsSchema,
   submissionSchema,
   updateSubmissionSchema,
 } from './dto/submission.dto.js';
@@ -17,17 +19,23 @@ export class SubmissionController extends BaseController {
   }
 
   routes() {
-    this.router.get('/:submissionId', (req, res) =>
-      this.getSubmission(req, res),
+    this.router.get(
+      '/:submissionId',
+      validate('params', submissionParamsSchema),
+      (req, res) => this.getSubmission(req, res),
     );
     this.router.patch(
       '/:submissionId',
       this.#authz.requireAuth,
+      validate('params', submissionParamsSchema),
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
     );
-    this.router.delete('/:submissionId', this.#authz.requireAuth, (req, res) =>
-      this.deleteSubmission(req, res),
+    this.router.delete(
+      '/:submissionId',
+      this.#authz.requireAuth,
+      validate('params', submissionParamsSchema),
+      (req, res) => this.deleteSubmission(req, res),
     );
 
     return this.router;
@@ -36,10 +44,13 @@ export class SubmissionController extends BaseController {
   challengeRoutes() {
     const router = this.createRouter({ mergeParams: true });
 
-    router.get('/', (req, res) => this.getSubmissions(req, res));
+    router.get('/', validate('params', challengeIdParamSchema), (req, res) =>
+      this.getSubmissions(req, res),
+    );
     router.post(
       '/',
       this.#authz.requireAuth,
+      validate('params', challengeIdParamSchema),
       validate('body', submissionSchema),
       (req, res) => this.createSubmission(req, res),
     );
@@ -66,14 +77,13 @@ export class SubmissionController extends BaseController {
   }
 
   async createSubmission(req, res) {
-    // 참여자 확인 여부는 participation 쪽 완성 이후 작성 예정
-
     const { challengeId } = req.params;
-    const { participationId, title, content } = req.body;
+    const userId = req.user.id;
+    const { title, content } = req.body;
     const submission = await this.#submissionService.createSubmission(
       challengeId,
+      userId,
       {
-        participationId,
         title,
         content,
       },
