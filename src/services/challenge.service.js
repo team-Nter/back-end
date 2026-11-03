@@ -39,6 +39,33 @@ export class ChallengeService {
     return challenge;
   }
 
+  async getChallenges({
+    category,
+    documentType,
+    progress,
+    sort,
+    page,
+    pageSize,
+    keyword,
+  }) {
+    const filters = { category, documentType, state: progress, keyword };
+
+    const [items, { total }] = await Promise.all([
+      this.#challengeRepository.findMany({ page, pageSize, sort, ...filters }),
+      this.#challengeRepository.count(filters),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalCount: total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
   async getMyChallenges(userId, type, { page, pageSize, keyword }) {
     const typeFilters = MY_CHALLENGE_FILTERS[type](userId);
 
