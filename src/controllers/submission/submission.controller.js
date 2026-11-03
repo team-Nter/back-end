@@ -66,14 +66,13 @@ export class SubmissionController extends BaseController {
   }
 
   async createSubmission(req, res) {
-    // 참여자 확인 여부는 participation 쪽 완성 이후 작성 예정
-
     const { challengeId } = req.params;
-    const { participationId, title, content } = req.body;
+    const userId = req.user.id;
+    const { title, content } = req.body;
     const submission = await this.#submissionService.createSubmission(
       challengeId,
+      userId,
       {
-        participationId,
         title,
         content,
       },

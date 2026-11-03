@@ -8,10 +8,16 @@ import {
 export class SubmissionService {
   #submissionRepository;
   #challengeRepository;
+  #participationRepository;
 
-  constructor({ submissionRepository, challengeRepository }) {
+  constructor({
+    submissionRepository,
+    challengeRepository,
+    participationRepository,
+  }) {
     this.#submissionRepository = submissionRepository;
     this.#challengeRepository = challengeRepository;
+    this.#participationRepository = participationRepository;
   }
 
   // 작업물 단일 조회
@@ -103,9 +109,8 @@ export class SubmissionService {
     return { items, pagination };
   }
 
-  async createSubmission(challengeId, data) {
+  async createSubmission(challengeId, userId, data) {
     const challenge = await this.#challengeRepository.findById(challengeId);
-
     if (!challenge) {
       throw new NotFoundException('챌린지를 찾을 수 없습니다.');
     }
@@ -117,11 +122,23 @@ export class SubmissionService {
       throw new ConflictException('제출할 수 없는 챌린지입니다.');
     }
 
-    // TODO: 실험용 body 입력 대신 로그인 사용자의 참여 기록으로 검증·대체
-    const submission = await this.#submissionRepository.create(
-      challengeId,
-      data,
-    );
+    const userParticipation =
+      await this.#participationRepository.findByChallengeIdAndUserId({
+        challengeId,
+        userId,
+      });
+
+    if (!userParticipation) {
+      throw new ForbiddenException(
+        '챌린지 참여자만 작업물을 제출할 수 있습니다.',
+      );
+    }
+
+    const submission = await this.#submissionRepository.create(challengeId, {
+      title: data.title,
+      content: data.content,
+      participationId: userParticipation.id,
+    });
 
     if (!submission) {
       throw new Error('작업물 생성에 실패했습니다');
