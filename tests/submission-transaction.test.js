@@ -131,8 +131,23 @@ for (const [name, options, ErrorType] of [
   });
 }
 
-test('DB 오류는 트랜잭션 밖으로 전파된다', async () => {
+test('유니크 위반은 제출 전용 409 오류로 변환되고 롤백된다', async () => {
   const error = Object.assign(new Error('duplicate'), { sqlState: '23505' });
+  const fixture = setup({ writeError: error });
+  await assert.rejects(
+    fixture.service.createSubmission(7, 2, data),
+    (actual) =>
+      actual instanceof ConflictException &&
+      actual.statusCode === 409 &&
+      actual.message === '이미 제출한 작업물이 있습니다.',
+  );
+  assert.equal(fixture.events.at(-1), 'rollback');
+});
+
+test('그 외 DB 오류는 트랜잭션 밖으로 전파된다', async () => {
+  const error = Object.assign(new Error('foreign key violation'), {
+    sqlState: '23503',
+  });
   const fixture = setup({ writeError: error });
   await assert.rejects(
     fixture.service.createSubmission(7, 2, data),

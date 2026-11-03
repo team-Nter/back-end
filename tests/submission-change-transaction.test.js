@@ -32,7 +32,6 @@ function setup(scenario) {
           ? null
           : { id: scenario === 'otherAuthor' ? 3 : 2 },
     },
-    challengeId: scenario === 'moved' ? 8 : 7,
   };
   const query = (model) => {
     let locking = false;
@@ -152,7 +151,6 @@ for (const method of ['updateSubmission', 'deleteSubmission']) {
     ['missingSubmission', NotFoundException],
     ['missingChallenge', NotFoundException],
     ['deletedDuringWait', NotFoundException],
-    ['moved', ConflictException],
   ]) {
     test(`${method}: ${scenario}이면 최신 상태로 거절하고 변경하지 않는다`, async () => {
       const { service, events } = setup(scenario);

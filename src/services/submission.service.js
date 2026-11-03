@@ -1,3 +1,4 @@
+import { DB_ERROR } from '#constants';
 import {
   BadRequestException,
   ConflictException,
@@ -142,19 +143,25 @@ export class SubmissionService {
         );
       }
 
-      if (new Date(challenge.deadlineAt).getTime() <= Date.now()) {
-        throw new ConflictException('마감된 챌린지입니다.');
-      }
+      let submission;
 
-      const submission = await this.#submissionRepository.create(
-        challengeId,
-        {
-          title: data.title,
-          content: data.content,
-          participationId: participation.id,
-        },
-        { tx },
-      );
+      try {
+        submission = await this.#submissionRepository.create(
+          challengeId,
+          {
+            title: data.title,
+            content: data.content,
+            participationId: participation.id,
+          },
+          { tx },
+        );
+      } catch (error) {
+        if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
+          throw new ConflictException('이미 제출한 작업물이 있습니다.');
+        }
+
+        throw error;
+      }
 
       if (!submission) {
         throw new Error('작업물 생성에 실패했습니다.');
@@ -176,12 +183,18 @@ export class SubmissionService {
     });
   }
 
-  async updateSubmission(submissionId, userId, data) {
+  async updateSubmission(submissionId, userId, data, userRole) {
     // 검증 구간에서 트랜잭션 필요하기에 나눔.
     return this.#db.transaction(async (tx) => {
-      await this.#validateSubmissionChange(submissionId, userId, '수정', {
-        tx,
-      });
+      await this.#validateSubmissionChange(
+        submissionId,
+        userId,
+        userRole,
+        '수정',
+        {
+          tx,
+        },
+      );
 
       const submission = await this.#submissionRepository.update(
         submissionId,
@@ -196,16 +209,28 @@ export class SubmissionService {
     });
   }
 
-  async deleteSubmission(submissionId, userId) {
+  async deleteSubmission(submissionId, userId, userRole) {
     return this.#db.transaction(async (tx) => {
-      await this.#validateSubmissionChange(submissionId, userId, '삭제', {
-        tx,
-      });
+      await this.#validateSubmissionChange(
+        submissionId,
+        userId,
+        userRole,
+        '삭제',
+        {
+          tx,
+        },
+      );
       await this.#submissionRepository.delete(submissionId, { tx });
     });
   }
 
-  async #validateSubmissionChange(submissionId, userId, action, { tx }) {
+  async #validateSubmissionChange(
+    submissionId,
+    userId,
+    userRole,
+    action,
+    { tx },
+  ) {
     const existingSubmission = await this.#submissionRepository.findById(
       submissionId,
       { tx },
@@ -230,16 +255,14 @@ export class SubmissionService {
       throw new NotFoundException('작업물을 찾을 수 없습니다');
     }
 
+    // ADMIN이면 선정된 것이든, 진행 중 또는 마감되었든 수정 및 삭제가 가능해야 함.
+
+    if (userRole === 'ADMIN') return;
+
     const authorId = submission.participation?.user?.id;
     if (authorId === undefined || authorId === null || authorId !== userId) {
       throw new ForbiddenException(
         `본인이 작성한 작업물만 ${action}이 가능합니다`,
-      );
-    }
-
-    if (submission.challengeId !== existingSubmission.challengeId) {
-      throw new ConflictException(
-        '작업물의 챌린지가 변경되었습니다. 다시 시도해주세요.',
       );
     }
 

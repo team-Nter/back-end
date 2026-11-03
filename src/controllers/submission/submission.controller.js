@@ -27,6 +27,7 @@ export class SubmissionController extends BaseController {
     this.router.patch(
       '/:submissionId',
       this.#authz.requireAuth,
+      this.#authz.requireRole('USER', 'ADMIN'),
       validate('params', submissionParamsSchema),
       validate('body', updateSubmissionSchema),
       (req, res) => this.updateSubmission(req, res),
@@ -34,6 +35,7 @@ export class SubmissionController extends BaseController {
     this.router.delete(
       '/:submissionId',
       this.#authz.requireAuth,
+      this.#authz.requireRole('USER', 'ADMIN'),
       validate('params', submissionParamsSchema),
       (req, res) => this.deleteSubmission(req, res),
     );
@@ -98,6 +100,7 @@ export class SubmissionController extends BaseController {
       submissionId,
       req.user.id,
       { title, content },
+      req.user.role,
     );
 
     res.status(HTTP_STATUS.OK).json(updateSubmission);
@@ -106,7 +109,11 @@ export class SubmissionController extends BaseController {
   async deleteSubmission(req, res) {
     const { submissionId } = req.params;
 
-    await this.#submissionService.deleteSubmission(submissionId, req.user.id);
+    await this.#submissionService.deleteSubmission(
+      submissionId,
+      req.user.id,
+      req.user.role,
+    );
     res.status(HTTP_STATUS.NO_CONTENT).json();
   }
 }
