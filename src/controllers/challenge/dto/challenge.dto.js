@@ -60,7 +60,6 @@ export const myChallengeListQuerySchema = z.object({
   keyword: z.string().trim().optional(),
 });
 
-// 홍균
 export const challengeListQuerySchema = z.object({
   category: z
     .string()
@@ -94,7 +93,6 @@ export const challengeListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
   keyword: z.string().trim().optional(),
 });
-// 홍균
 
 export const adminChallengeListQuerySchema = z.object({
   status: z
