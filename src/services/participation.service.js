@@ -1,48 +1,74 @@
-import { ERROR_MESSAGE } from '#constants';
+import { DB_ERROR, ERROR_MESSAGE } from '#constants';
 import { ConflictException, NotFoundException } from '#exceptions';
 
 export class ParticipationService {
+  #db;
   #participationRepository;
   #challengeRepository;
 
-  constructor({ participationRepository, challengeRepository }) {
+  constructor({ db, participationRepository, challengeRepository }) {
+    this.#db = db;
     this.#participationRepository = participationRepository;
     this.#challengeRepository = challengeRepository;
   }
 
   async joinChallenge({ challengeId, userId }) {
-    const challenge = await this.#challengeRepository.findById(challengeId);
-
-    if (!challenge) {
-      throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
-    }
-
-    if (challenge.status !== 'APPROVED') {
-      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_NOT_APPROVED);
-    }
-
-    if (new Date(challenge.deadlineAt) <= new Date()) {
-      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_CLOSED);
-    }
-
-    const participation =
-      await this.#participationRepository.findByChallengeIdAndUserId({
+    return this.#db.transaction(async (tx) => {
+      const challenge = await this.#challengeRepository.findByIdForUpdate(
         challengeId,
-        userId,
-      });
+        { tx },
+      );
 
-    if (participation) {
-      throw new ConflictException(ERROR_MESSAGE.ALREADY_PARTICIPATING);
-    }
+      if (!challenge) {
+        throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
+      }
 
-    const count =
-      await this.#participationRepository.countByChallengeId(challengeId);
+      if (challenge.status !== 'APPROVED') {
+        throw new ConflictException(ERROR_MESSAGE.CHALLENGE_NOT_APPROVED);
+      }
 
-    if (count >= challenge.maxParticipants) {
-      throw new ConflictException(ERROR_MESSAGE.CHALLENGE_FULL);
-    }
+      if (new Date(challenge.deadlineAt) <= new Date()) {
+        throw new ConflictException(ERROR_MESSAGE.CHALLENGE_CLOSED);
+      }
 
-    return this.#participationRepository.create({ challengeId, userId });
+      const participation =
+        await this.#participationRepository.findByChallengeIdAndUserId(
+          {
+            challengeId,
+            userId,
+          },
+          { tx },
+        );
+
+      if (participation) {
+        throw new ConflictException(ERROR_MESSAGE.ALREADY_PARTICIPATING);
+      }
+
+      const count = await this.#participationRepository.countByChallengeId(
+        challengeId,
+        { tx },
+      );
+
+      if (count >= challenge.maxParticipants) {
+        throw new ConflictException(ERROR_MESSAGE.CHALLENGE_FULL);
+      }
+
+      try {
+        return await this.#participationRepository.create(
+          {
+            challengeId,
+            userId,
+          },
+          { tx },
+        );
+      } catch (error) {
+        if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
+          throw new ConflictException(ERROR_MESSAGE.ALREADY_PARTICIPATING);
+        }
+
+        throw error;
+      }
+    });
   }
 
   async leaveChallenge({ challengeId, userId }) {

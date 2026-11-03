@@ -42,6 +42,15 @@ export class ChallengeRepository {
       .first();
   }
 
+  // 참여 시 동시성 제어용 : 챌린지 행을 잠그면서 조회
+  findByIdForUpdate(id, { tx } = {}) {
+    return this.#orm(tx)
+      .Challenge.where({ id: Number(id) })
+      .select(...this.#fields)
+      .forNoKeyUpdate()
+      .first();
+  }
+
   //챌린지 목록(공개/관리자/내가 신청한/내가 참여한)
   findMany({
     page = 1,
