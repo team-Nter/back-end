@@ -59,8 +59,11 @@ export const createContainer = () => {
   });
 
   const challengeService = new ChallengeService({
+    db,
     challengeRepository,
     moderationLogRepository,
+    participationRepository,
+    submissionRepository,
   });
 
   const submissionService = new SubmissionService({
