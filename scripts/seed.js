@@ -3,6 +3,7 @@ import postgres from '@prisma/orm-postgres/runtime';
 import bcrypt from 'bcrypt';
 import contractJson from '../src/prisma/contract.json' with { type: 'json' };
 import { fileURLToPath } from 'node:url';
+import { CHALLENGE_CATEGORIES, DOCUMENT_TYPES } from '#constants';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -65,13 +66,8 @@ export class Seeder {
       title: faker.lorem.sentence(5),
       sourceUrl: faker.internet.url(),
       description: faker.lorem.paragraph(5),
-      category: faker.helpers.arrayElement([
-        'next.js',
-        'web',
-        'api',
-        'modernJS',
-      ]),
-      documentType: faker.helpers.arrayElement(['블로그', '공식문서']),
+      category: faker.helpers.arrayElement(CHALLENGE_CATEGORIES),
+      documentType: faker.helpers.arrayElement(DOCUMENT_TYPES),
       deadlineAt: faker.date.future().toISOString(),
       maxParticipants: 15,
       status: faker.helpers.weightedArrayElement([
