@@ -51,6 +51,31 @@ export class ChallengeRepository {
       .first();
   }
 
+  // 채택 처리 여부 사전 확인용 : 행을 잠그지 않고 조회
+  findSelectedAt(id) {
+    return this.#orm()
+      .Challenge.where({ id: Number(id) })
+      .select('id', 'selectedAt')
+      .first();
+  }
+
+  // 채택 처리용 : 챌린지 행을 잠그면서 채택 처리 시각 조회
+  findSelectedAtForUpdate(id, { tx } = {}) {
+    return this.#orm(tx)
+      .Challenge.where({ id: Number(id) })
+      .select('id', 'selectedAt')
+      .forNoKeyUpdate()
+      .first();
+  }
+
+  // 채택 처리 시각 기록
+  markSelected(id, { tx } = {}) {
+    return this.#orm(tx)
+      .Challenge.where({ id: Number(id) })
+      .select('id', 'selectedAt')
+      .update({ selectedAt: new Date().toISOString() });
+  }
+
   //챌린지 목록(공개/관리자/내가 신청한/내가 참여한)
   findMany({
     page = 1,

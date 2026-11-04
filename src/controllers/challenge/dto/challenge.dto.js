@@ -31,7 +31,7 @@ export const createChallengeSchema = z.object({
     .number({ error: '최대 인원은 숫자여야 합니다.' })
     .int('최대 인원은 정수여야 합니다.')
     .min(1, '최대 인원은 1명 이상이어야 합니다.')
-    .max(100, '최대 인원은 100명 이하여야 합니다.'),
+    .max(15, '최대 인원은 15명 이하여야 합니다.'),
 
   description: z
     .string({ error: '내용입력은 필수입니다.' })

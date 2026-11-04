@@ -110,4 +110,45 @@ export class SubmissionRepository {
 
     return db.orm.public.Submission.where({ id: Number(id) }).delete();
   }
+
+  // 채택 후보 : 챌린지의 작업물별 좋아요 수
+  findLikeCountsByChallengeId(challengeId, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.Submission.where({
+      challengeId: Number(challengeId),
+    })
+      .select('id')
+      .include('likes', (likes) => likes.count())
+      .all();
+  }
+
+  // 채택 기록
+  markSelected(ids, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.Submission.where((submission) =>
+      submission.id.in(ids),
+    ).updateAll({ isSelected: true });
+  }
+
+  // 최다 추천 번역 : 채택된 작업물
+  findSelectedByChallengeId(challengeId) {
+    return this.#db.orm.public.Submission.where({
+      challengeId: Number(challengeId),
+      isSelected: true,
+    })
+      .select('id', 'content', 'submittedAt')
+      .include('likes', (likes) => likes.count())
+      .include('participation', (participation) =>
+        participation
+          .select('id')
+          .include('user', (user) => user.select('id', 'nickname', 'grade')),
+      )
+      .orderBy([
+        (submission) => submission.submittedAt.asc(),
+        (submission) => submission.id.asc(),
+      ])
+      .all();
+  }
 }
