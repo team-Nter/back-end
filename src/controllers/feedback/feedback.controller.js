@@ -21,6 +21,7 @@ export class FeedbackController extends BaseController {
     this.router.patch(
       '/:feedbackId',
       this.#authz.requireAuth,
+      this.#authz.requireRole('USER', 'ADMIN'),
       validate('params', feedbackParamsSchema),
       validate('body', createFeedbackSchema),
       (req, res) => this.updateFeedback(req, res),
@@ -28,6 +29,7 @@ export class FeedbackController extends BaseController {
     this.router.delete(
       '/:feedbackId',
       this.#authz.requireAuth,
+      this.#authz.requireRole('USER', 'ADMIN'),
       validate('params', feedbackParamsSchema),
       (req, res) => this.deleteFeedback(req, res),
     );
@@ -36,8 +38,10 @@ export class FeedbackController extends BaseController {
 
   submissionRoutes() {
     const router = this.createRouter({ mergeParams: true });
-    router.get('/', validate('params', submissionParamsSchema), (req, res) =>
-      this.getFeedbacks(req, res),
+    router.get(
+      '/',
+      validate('params', submissionParamsSchema),
+      (req, res) => this.getFeedbacks(req, res),
     );
     router.post(
       '/',
@@ -82,6 +86,7 @@ export class FeedbackController extends BaseController {
     const feedback = await this.#feedbackService.updateFeedback(
       feedbackId,
       req.user.id,
+      req.user.role,
       content,
     );
 
@@ -90,7 +95,11 @@ export class FeedbackController extends BaseController {
 
   async deleteFeedback(req, res) {
     const { feedbackId } = req.params;
-    await this.#feedbackService.deleteFeedback(feedbackId, req.user.id);
+    await this.#feedbackService.deleteFeedback(
+      feedbackId,
+      req.user.id,
+      req.user.role,
+    );
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }

@@ -79,8 +79,10 @@ export const createContainer = () => {
   });
 
   const feedbackService = new FeedbackService({
+    db,
     feedbackRepository,
     submissionRepository,
+    challengeRepository,
   });
 
   const moderationLogService = new ModerationLogService({
