@@ -40,7 +40,6 @@ export class FeedbackController extends BaseController {
     const router = this.createRouter({ mergeParams: true });
     router.get(
       '/',
-      this.#authz.requireRole,
       validate('params', submissionParamsSchema),
       (req, res) => this.getFeedbacks(req, res),
     );
