@@ -32,6 +32,20 @@ export class ParticipationRepository {
     return rows.map((row) => row.userId).filter((userId) => userId !== null);
   }
 
+  // 참여 현황 : 챌린지의 참여자 전체와 제출한 작업물(좋아요 수)
+  findAllWithSubmissionByChallengeId(challengeId) {
+    return this.#orm()
+      .Participation.where({ challengeId: Number(challengeId) })
+      .select('id', 'joinedAt')
+      .include('user', (user) => user.select('id', 'nickname', 'grade'))
+      .include('submission', (submission) =>
+        submission
+          .select('id', 'submittedAt')
+          .include('likes', (likes) => likes.count()),
+      )
+      .all();
+  }
+
   create({ challengeId, userId }, { tx } = {}) {
     return this.#orm(tx)
       .Participation.select(...this.#fields)
