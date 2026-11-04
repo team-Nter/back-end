@@ -21,6 +21,7 @@ export class FeedbackController extends BaseController {
     this.router.patch(
       '/:feedbackId',
       this.#authz.requireAuth,
+      this.#authz.requireRole,
       validate('params', feedbackParamsSchema),
       validate('body', createFeedbackSchema),
       (req, res) => this.updateFeedback(req, res),
@@ -28,6 +29,7 @@ export class FeedbackController extends BaseController {
     this.router.delete(
       '/:feedbackId',
       this.#authz.requireAuth,
+      this.#authz.requireRole,
       validate('params', feedbackParamsSchema),
       (req, res) => this.deleteFeedback(req, res),
     );
@@ -36,8 +38,11 @@ export class FeedbackController extends BaseController {
 
   submissionRoutes() {
     const router = this.createRouter({ mergeParams: true });
-    router.get('/', validate('params', submissionParamsSchema), (req, res) =>
-      this.getFeedbacks(req, res),
+    router.get(
+      '/',
+      this.#authz.requireRole,
+      validate('params', submissionParamsSchema),
+      (req, res) => this.getFeedbacks(req, res),
     );
     router.post(
       '/',

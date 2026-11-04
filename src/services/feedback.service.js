@@ -114,7 +114,7 @@ export class FeedbackService {
     });
   }
 
-  async updateFeedback(feedbackId, userId, content) {
+  async updateFeedback(feedbackId, userId, userRole, content) {
     return this.#db.transaction(async (tx) => {
       // 연결된 ID를 먼저 확인한 뒤 챌린지 → 제출물 → 피드백 순서로 잠급니다.
       const existingFeedback = await this.#feedbackRepository.findById(
@@ -153,7 +153,7 @@ export class FeedbackService {
         feedbackId,
         { tx },
       );
-      this.#validateFeedbackAuthor(feedback, userId, '수정');
+      this.#validateFeedbackAuthor(feedback, userId, userRole, '수정');
 
       if (
         submission.challengeId !== existingSubmission.challengeId ||
@@ -176,23 +176,25 @@ export class FeedbackService {
     });
   }
 
-  async deleteFeedback(feedbackId, userId) {
+  async deleteFeedback(feedbackId, userId, userRole) {
     return this.#db.transaction(async (tx) => {
       const feedback = await this.#feedbackRepository.findByIdForUpdate(
         feedbackId,
         { tx },
       );
 
-      this.#validateFeedbackAuthor(feedback, userId, '삭제');
+      this.#validateFeedbackAuthor(feedback, userId, userRole, '삭제');
 
       return await this.#feedbackRepository.delete(feedbackId, { tx });
     });
   }
 
-  #validateFeedbackAuthor(feedback, userId, action) {
+  #validateFeedbackAuthor(feedback, userId, userRole, action) {
     if (!feedback) {
       throw new NotFoundException('피드백을 찾을 수 없습니다');
     }
+
+    if (userRole !== 'ADMIN') return;
 
     if (feedback.authorId !== userId) {
       throw new ForbiddenException(
