@@ -215,8 +215,31 @@ export class ChallengeService {
     return participation ? { id: participation.id } : null;
   }
 
-  // 마감 후 첫 조회 때 채택 처리, 이후엔 채택된 작업물만 조회
+  // 최다 추천 번역 : 잠금 없이 채택 여부를 먼저 확인하고, 미처리일 때만 채택 처리
   async #getBestSubmissions(challengeId) {
+    const challenge =
+      await this.#challengeRepository.findSelectedAt(challengeId);
+
+    if (challenge && !challenge.selectedAt) {
+      await this.#selectBestSubmissions(challengeId);
+    }
+
+    const selected =
+      await this.#submissionRepository.findSelectedByChallengeId(challengeId);
+
+    return selected.map(
+      ({ id, content, likes, submittedAt, participation }) => ({
+        id,
+        content,
+        likeCount: likes,
+        submittedAt,
+        author: participation.user,
+      }),
+    );
+  }
+
+  // 채택 처리 : 잠금 후 다시 확인해서 동시 첫 조회의 중복 채택 방지
+  async #selectBestSubmissions(challengeId) {
     await this.#db.transaction(async (tx) => {
       const challenge = await this.#challengeRepository.findSelectedAtForUpdate(
         challengeId,
@@ -242,19 +265,6 @@ export class ChallengeService {
 
       await this.#challengeRepository.markSelected(challengeId, { tx });
     });
-
-    const selected =
-      await this.#submissionRepository.findSelectedByChallengeId(challengeId);
-
-    return selected.map(
-      ({ id, content, likes, submittedAt, participation }) => ({
-        id,
-        content,
-        likeCount: likes,
-        submittedAt,
-        author: participation.user,
-      }),
-    );
   }
 
   #buildAdminFilters({ status, keyword } = {}) {
