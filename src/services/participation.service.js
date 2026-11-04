@@ -12,6 +12,24 @@ export class ParticipationService {
     this.#challengeRepository = challengeRepository;
   }
 
+  async getParticipation({ challengeId, userId }) {
+    const challenge = await this.#challengeRepository.findById(challengeId);
+    if (!challenge) {
+      throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
+    }
+
+    const participation =
+      await this.#participationRepository.findByChallengeIdAndUserId({
+        challengeId,
+        userId,
+      });
+    if (!participation) {
+      throw new NotFoundException(ERROR_MESSAGE.PARTICIPATION_NOT_FOUND);
+    }
+
+    return participation;
+  }
+
   async joinChallenge({ challengeId, userId }) {
     return this.#db.transaction(async (tx) => {
       const challenge = await this.#challengeRepository.findByIdForUpdate(

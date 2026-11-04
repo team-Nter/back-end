@@ -2,7 +2,10 @@ import express from 'express';
 import { HTTP_STATUS } from '#constants';
 import { BaseController } from '../base.controller.js';
 import { validate } from '#middlewares';
-import { challengeIdParamSchema } from './dto/participation.dto.js';
+import {
+  challengeIdParamSchema,
+  participationParamsSchema,
+} from './dto/participation.dto.js';
 
 export class ParticipationController extends BaseController {
   #participationService;
@@ -16,6 +19,11 @@ export class ParticipationController extends BaseController {
   }
 
   routes() {
+    this.router.get(
+      '/:userId',
+      validate('params', participationParamsSchema),
+      (req, res) => this.getParticipation(req, res),
+    );
     this.router.post(
       '/',
       this.#authz.requireAuth,
@@ -30,6 +38,15 @@ export class ParticipationController extends BaseController {
     );
 
     return this.router;
+  }
+
+  async getParticipation(req, res) {
+    const { challengeId, userId } = req.params;
+    const participation = await this.#participationService.getParticipation({
+      challengeId,
+      userId,
+    });
+    res.status(HTTP_STATUS.OK).json(participation);
   }
 
   async joinChallenge(req, res) {

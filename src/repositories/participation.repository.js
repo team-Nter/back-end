@@ -48,35 +48,8 @@ export class ParticipationRepository {
         userId: Number(userId),
       })
       .select(...this.#fields)
-      .first();
-  }
-
-  findWithSubmissionByChallengeIdAndUserId(
-    { challengeId, userId },
-    { tx } = {},
-  ) {
-    return this.#orm(tx)
-      .Participation.where({
-        challengeId: Number(challengeId),
-        userId: Number(userId),
-      })
-      .select('id', 'challengeId', 'userId')
+      .include('submission', (submission) => submission.select('id'))
       .include('user', (user) => user.select('id', 'nickname', 'grade'))
-      .include('submission', (submission) =>
-        submission
-          .select(
-            'id',
-            'challengeId',
-            'title',
-            'content',
-            'isSelected',
-            'createdAt',
-            'updatedAt',
-            'submittedAt',
-          )
-          .include('likes', (likes) => likes.count())
-          .include('feedbacks', (feedbacks) => feedbacks.count()),
-      )
       .first();
   }
 
