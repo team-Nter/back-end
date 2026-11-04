@@ -68,10 +68,10 @@ export class FeedbackService {
   async createFeedback(submissionId, authorId, content) {
     return this.#db.transaction(async (tx) => {
       // 연결 ID를 조회한 뒤 챌린지 → 제출물 순서로 잠급니다.
-      const existingSubmission = await this.#submissionRepository.findById(
-        submissionId,
-        { tx },
-      );
+      const existingSubmission =
+        await this.#submissionRepository.findChallengeIdById(submissionId, {
+          tx,
+        });
       if (!existingSubmission) {
         throw new NotFoundException('제출물을 찾을 수 없습니다');
       }
@@ -83,10 +83,11 @@ export class FeedbackService {
         throw new NotFoundException('챌린지를 찾을 수 없습니다');
       }
 
-      const submission = await this.#submissionRepository.findByIdForUpdate(
-        submissionId,
-        { tx },
-      );
+      const submission =
+        await this.#submissionRepository.findReferenceByIdForUpdate(
+          submissionId,
+          { tx },
+        );
       if (!submission) {
         throw new NotFoundException('제출물을 찾을 수 없습니다');
       }
@@ -116,89 +117,77 @@ export class FeedbackService {
 
   async updateFeedback(feedbackId, userId, userRole, content) {
     return this.#db.transaction(async (tx) => {
-      // 연결된 ID를 먼저 확인한 뒤 챌린지 → 제출물 → 피드백 순서로 잠급니다.
-      const existingFeedback = await this.#feedbackRepository.findById(
-        feedbackId,
-        { tx },
-      );
-      if (!existingFeedback) {
-        throw new NotFoundException('피드백을 찾을 수 없습니다');
-      }
-
-      // 연결 ID를 조회한 뒤 챌린지 → 제출물 순서로 잠급니다.
-      const existingSubmission = await this.#submissionRepository.findById(
-        existingFeedback.submissionId,
-        { tx },
-      );
-      if (!existingSubmission) {
-        throw new NotFoundException('제출물을 찾을 수 없습니다');
-      }
-      const challenge = await this.#challengeRepository.findByIdForUpdate(
-        existingSubmission.challengeId,
-        { tx },
-      );
-      if (!challenge) {
-        throw new NotFoundException('챌린지를 찾을 수 없습니다');
-      }
-
-      const submission = await this.#submissionRepository.findByIdForUpdate(
-        existingFeedback.submissionId,
-        { tx },
-      );
-      if (!submission) {
-        throw new NotFoundException('제출물을 찾을 수 없습니다');
-      }
-
-      const feedback = await this.#feedbackRepository.findByIdForUpdate(
-        feedbackId,
-        { tx },
-      );
-      this.#validateFeedbackAuthor(feedback, userId, userRole, '수정');
-
-      if (
-        submission.challengeId !== existingSubmission.challengeId ||
-        feedback.submissionId !== existingFeedback.submissionId
-      ) {
-        throw new ConflictException(
-          '피드백의 연결 정보가 변경되었습니다. 다시 시도해주세요.',
-        );
-      }
-
-      if (challenge.status !== 'APPROVED') {
-        throw new ConflictException(
-          '승인된 챌린지의 피드백만 수정할 수 있습니다.',
-        );
-      }
-
-      return await this.#feedbackRepository.update(feedbackId, content, {
+      await this.#validateFeedbackChange(feedbackId, userId, userRole, '수정', {
         tx,
       });
+      return await this.#feedbackRepository.update(feedbackId, content, { tx });
     });
   }
 
   async deleteFeedback(feedbackId, userId, userRole) {
     return this.#db.transaction(async (tx) => {
-      const feedback = await this.#feedbackRepository.findByIdForUpdate(
-        feedbackId,
-        { tx },
-      );
-
-      this.#validateFeedbackAuthor(feedback, userId, userRole, '삭제');
-
+      await this.#validateFeedbackChange(feedbackId, userId, userRole, '삭제', {
+        tx,
+      });
       return await this.#feedbackRepository.delete(feedbackId, { tx });
     });
   }
 
-  #validateFeedbackAuthor(feedback, userId, userRole, action) {
+  async #validateFeedbackChange(feedbackId, userId, userRole, action, { tx }) {
+    // 연결 ID를 확인한 뒤 챌린지 → 제출물 → 피드백 순서로 잠급니다.
+    const existingFeedback = await this.#feedbackRepository.findById(
+      feedbackId,
+      {
+        tx,
+      },
+    );
+    if (!existingFeedback) {
+      throw new NotFoundException('피드백을 찾을 수 없습니다');
+    }
+
+    const existingSubmission =
+      await this.#submissionRepository.findChallengeIdById(
+        existingFeedback.submissionId,
+        { tx },
+      );
+    if (!existingSubmission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
+    }
+
+    const challenge = await this.#challengeRepository.findByIdForUpdate(
+      existingSubmission.challengeId,
+      { tx },
+    );
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다');
+    }
+
+    const submission =
+      await this.#submissionRepository.findReferenceByIdForUpdate(
+        existingFeedback.submissionId,
+        { tx },
+      );
+    if (!submission) {
+      throw new NotFoundException('제출물을 찾을 수 없습니다');
+    }
+
+    const feedback = await this.#feedbackRepository.findByIdForUpdate(
+      feedbackId,
+      { tx },
+    );
     if (!feedback) {
       throw new NotFoundException('피드백을 찾을 수 없습니다');
     }
 
-    if (userRole !== 'ADMIN') return;
-
-    if (feedback.authorId !== userId) {
+    if (userRole !== 'ADMIN' && feedback.authorId !== userId) {
       throw new ForbiddenException(
         `본인이 작성한 피드백만 ${action}할 수 있습니다.`,
+      );
+    }
+
+    if (challenge.status !== 'APPROVED') {
+      throw new ConflictException(
+        `승인된 챌린지의 피드백만 ${action}할 수 있습니다.`,
       );
     }
   }

@@ -87,6 +87,7 @@ export class FeedbackController extends BaseController {
     const feedback = await this.#feedbackService.updateFeedback(
       feedbackId,
       req.user.id,
+      req.user.role,
       content,
     );
 
@@ -95,7 +96,11 @@ export class FeedbackController extends BaseController {
 
   async deleteFeedback(req, res) {
     const { feedbackId } = req.params;
-    await this.#feedbackService.deleteFeedback(feedbackId, req.user.id);
+    await this.#feedbackService.deleteFeedback(
+      feedbackId,
+      req.user.id,
+      req.user.role,
+    );
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }
