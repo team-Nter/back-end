@@ -3,6 +3,7 @@ import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
 import { challengeIdParamSchema } from '../challenge/dto/challenge.dto.js';
 import {
+  participantSubmissionParamsSchema,
   submissionParamsSchema,
   submissionSchema,
   updateSubmissionSchema,
@@ -57,6 +58,25 @@ export class SubmissionController extends BaseController {
       (req, res) => this.createSubmission(req, res),
     );
     return router;
+  }
+
+  participantRoutes() {
+    const router = this.createRouter({ mergeParams: true });
+    router.get(
+      '/:userId/submission',
+      validate('params', participantSubmissionParamsSchema),
+      (req, res) => this.getParticipantSubmission(req, res),
+    );
+    return router;
+  }
+
+  async getParticipantSubmission(req, res) {
+    const { challengeId, userId } = req.params;
+    const result = await this.#submissionService.getParticipantSubmission(
+      challengeId,
+      userId,
+    );
+    res.status(HTTP_STATUS.OK).json(result);
   }
 
   async getSubmission(req, res) {
