@@ -57,12 +57,10 @@ export class SubmissionService {
     }
 
     const participation =
-      await this.#participationRepository.findWithSubmissionByChallengeIdAndUserId(
-        {
-          challengeId,
-          userId,
-        },
-      );
+      await this.#participationRepository.findByChallengeIdAndUserId({
+        challengeId,
+        userId,
+      });
     if (!participation) {
       throw new NotFoundException('참여 정보를 찾을 수 없습니다.');
     }
