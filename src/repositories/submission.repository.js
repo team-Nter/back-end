@@ -38,6 +38,15 @@ export class SubmissionRepository {
       .first();
   }
 
+  findByParticipantId(participationId, { tx } = {}) {
+    const db = tx ?? this.#db;
+    return db.orm.public.Submission.where({
+      participationId: Number(participationId),
+    })
+      .select('id')
+      .first();
+  }
+
   findReferenceByIdForUpdate(id, { tx } = {}) {
     if (!tx) {
       throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');

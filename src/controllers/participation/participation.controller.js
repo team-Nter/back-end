@@ -5,6 +5,7 @@ import { validate } from '#middlewares';
 import {
   challengeIdParamSchema,
   participantListQuerySchema,
+  participationParamsSchema,
 } from './dto/participation.dto.js';
 
 export class ParticipationController extends BaseController {
@@ -24,6 +25,12 @@ export class ParticipationController extends BaseController {
       validate('params', challengeIdParamSchema),
       validate('query', participantListQuerySchema),
       (req, res) => this.getParticipants(req, res),
+    );
+
+    this.router.get(
+      '/:userId',
+      validate('params', participationParamsSchema),
+      (req, res) => this.getParticipant(req, res),
     );
 
     this.router.post(
@@ -53,6 +60,16 @@ export class ParticipationController extends BaseController {
     });
 
     res.status(HTTP_STATUS.OK).json(participants);
+  }
+
+  async getParticipant(req, res) {
+    const { challengeId, userId } = req.params;
+    const participation = await this.#participationService.getParticipation({
+      challengeId,
+      userId,
+    });
+
+    res.status(HTTP_STATUS.OK).json(participation);
   }
 
   async joinChallenge(req, res) {
