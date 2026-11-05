@@ -17,9 +17,19 @@ export class AuthService {
   }
 
   async signUp({ email, password, nickname }) {
-    const foundUser = await this.#userRepository.findByEmail(email);
-    if (foundUser) {
-      throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
+    const [foundUserByEmail, foundUserByNickname] = await Promise.all([
+      this.#userRepository.findByEmail(email),
+      this.#userRepository.findByNickname(nickname),
+    ]);
+
+    const conflictsMessage = [];
+    if (foundUserByEmail)
+      conflictsMessage.push(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
+    if (foundUserByNickname)
+      conflictsMessage.push(ERROR_MESSAGE.NICKNAME_ALREADY_EXISTS);
+
+    if (conflictsMessage.length > 0) {
+      throw new ConflictException(conflictsMessage.join('\n'));
     }
 
     const hashedPassword = await this.#passwordProvider.hash(password);
