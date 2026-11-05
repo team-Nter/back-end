@@ -49,6 +49,12 @@ export const myChallengeListQuerySchema = z.object({
   type: z.enum(['requested', 'participating', 'completed'], {
     error: 'type은 requested, participating, completed 중 하나여야 합니다.',
   }),
+  status: z
+    .enum(CHALLENGE_STATUSES, {
+      error:
+        'status는 PENDING, APPROVED, REJECTED, CANCELED 중 하나여야 합니다.',
+    })
+    .optional(),
   page: z.coerce.number().int().min(1).max(100).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
   keyword: z.string().trim().optional(),

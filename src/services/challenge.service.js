@@ -95,10 +95,13 @@ export class ChallengeService {
     return { ...challenge, myParticipation, bestSubmissions };
   }
 
-  async getMyChallenges(userId, type, { page, pageSize, keyword }) {
+  async getMyChallenges(userId, type, { page, pageSize, keyword, status }) {
     const typeFilters = MY_CHALLENGE_FILTERS[type](userId);
 
     const filters = { ...typeFilters, keyword };
+    if (type === 'requested' && status) {
+      filters.statuses = [status];
+    }
 
     const [items, { total }] = await Promise.all([
       this.#challengeRepository.findMany({ page, pageSize, ...filters }),
