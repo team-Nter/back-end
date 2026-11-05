@@ -96,11 +96,17 @@ export class ChallengeService {
     const isPending = challenge.status === 'PENDING';
     const hasActivity =
       challenge.participations > 0 || challenge.submissions > 0;
+    const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
+
+    const moderation = hasModeration
+      ? await this.#moderationLogRepository.findLatestByChallenge(id)
+      : null;
 
     return {
       ...challenge,
       canEdit: isPending,
       canCancel: isPending && !hasActivity,
+      moderation: moderation ?? null,
     };
   }
 
