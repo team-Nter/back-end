@@ -4,6 +4,7 @@ export * from './auth/index.js';
 export * from './user/index.js';
 export * from './challenge/challenge.controller.js';
 export * from './submission/index.js';
+export * from './submission-draft/index.js';
 export * from './moderation-log/index.js';
 export * from './participation/index.js';
 export * from './feedback/index.js';
@@ -12,6 +13,7 @@ export class Controller extends BaseController {
   #userController;
   #challengeController;
   #submissionController;
+  #submissionDraftController;
   #moderationLogController;
   #participationController;
   #feedbackController;
@@ -21,6 +23,7 @@ export class Controller extends BaseController {
     userController,
     challengeController,
     submissionController,
+    submissionDraftController,
     moderationLogController,
     participationController,
     feedbackController,
@@ -30,6 +33,7 @@ export class Controller extends BaseController {
     this.#userController = userController;
     this.#challengeController = challengeController;
     this.#submissionController = submissionController;
+    this.#submissionDraftController = submissionDraftController;
     this.#moderationLogController = moderationLogController;
     this.#participationController = participationController;
     this.#feedbackController = feedbackController;
@@ -53,6 +57,10 @@ export class Controller extends BaseController {
     this.router.use(
       '/challenges/:challengeId/submissions',
       this.#submissionController.challengeRoutes(),
+    );
+    this.router.use(
+      '/challenges/:challengeId/draft',
+      this.#submissionDraftController.routes(),
     );
     this.router.use(
       '/challenges/:challengeId/moderation-logs',

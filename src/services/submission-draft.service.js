@@ -1,6 +1,6 @@
 import { ConflictException, NotFoundException } from '#exceptions';
 
-export class submissionDraftService {
+export class SubmissionDraftService {
   #db;
   #submissionDraftRepository;
   #challengeRepository;
