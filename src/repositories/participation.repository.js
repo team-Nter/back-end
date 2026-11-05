@@ -62,6 +62,20 @@ export class ParticipationRepository {
         userId: Number(userId),
       })
       .select(...this.#fields)
+      .include('user', (user) => user.select('id', 'nickname', 'grade'))
+      .first();
+  }
+
+  findWithSubmissionByChallengeIdAndUserId(
+    { challengeId, userId },
+    { tx } = {},
+  ) {
+    return this.#orm(tx)
+      .Participation.where({
+        challengeId: Number(challengeId),
+        userId: Number(userId),
+      })
+      .select(...this.#fields)
       .include('submission', (submission) => submission.select('id'))
       .include('user', (user) => user.select('id', 'nickname', 'grade'))
       .first();

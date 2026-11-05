@@ -14,15 +14,18 @@ export class ParticipationService {
 
   async getParticipation({ challengeId, userId }) {
     const challenge = await this.#challengeRepository.findById(challengeId);
-    if (!challenge) {
+
+    if (!challenge || challenge.status !== 'APPROVED') {
       throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
     }
 
     const participation =
-      await this.#participationRepository.findByChallengeIdAndUserId({
-        challengeId,
-        userId,
-      });
+      await this.#participationRepository.findWithSubmissionByChallengeIdAndUserId(
+        {
+          challengeId,
+          userId,
+        },
+      );
     if (!participation) {
       throw new NotFoundException(ERROR_MESSAGE.PARTICIPATION_NOT_FOUND);
     }
