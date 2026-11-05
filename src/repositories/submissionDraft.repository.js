@@ -33,11 +33,11 @@ export class submissionDraftRepository {
     });
   }
 
-  delete(participantionId, { tx } = {}) {
+  delete(participationId, { tx } = {}) {
     const db = tx ?? this.#db;
 
     return db.orm.public.SubmissionDraft.where({
-      participantionId: Number(participantionId),
+      participationId: Number(participationId),
     }).delete();
   }
 }
