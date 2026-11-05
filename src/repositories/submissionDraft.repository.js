@@ -6,7 +6,7 @@ export class submissionDraftRepository {
     this.#db = db;
   }
 
-  findByPariticpationId(participationId, { tx } = {}) {
+  findByParticipationId(participationId, { tx } = {}) {
     const db = tx ?? this.#db;
 
     return db.orm.public.SubmissionDraft.where({
