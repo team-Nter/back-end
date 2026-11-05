@@ -20,8 +20,3 @@ export const updateSubmissionSchema = submissionSchema
   });
 
 export const submissionParamsSchema = z.object({ submissionId: idSchema });
-
-export const participantSubmissionParamsSchema = z.object({
-  challengeId: idSchema,
-  userId: idSchema,
-});

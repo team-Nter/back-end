@@ -50,36 +50,6 @@ export class SubmissionService {
     };
   }
 
-  async getParticipantSubmission(challengeId, userId) {
-    const challenge = await this.#challengeRepository.findById(challengeId);
-    if (!challenge) {
-      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
-    }
-
-    const participation =
-      await this.#participationRepository.findByChallengeIdAndUserId({
-        challengeId,
-        userId,
-      });
-    if (!participation) {
-      throw new NotFoundException('참여 정보를 찾을 수 없습니다.');
-    }
-
-    if (!participation.submission) {
-      return { submission: null };
-    }
-
-    const { likes, feedbacks, ...submission } = participation.submission;
-    return {
-      submission: {
-        ...submission,
-        author: participation.user ?? null,
-        likeCount: likes,
-        feedbackCount: feedbacks,
-      },
-    };
-  }
-
   async getSubmissions(challengeId, page = 1, pageSize = 1) {
     const challenge = await this.#challengeRepository.findById(challengeId);
 
