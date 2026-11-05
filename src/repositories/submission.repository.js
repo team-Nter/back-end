@@ -38,10 +38,10 @@ export class SubmissionRepository {
       .first();
   }
 
-  findByParticipantId(participantionId, { tx } = {}) {
+  findByParticipantId(participationId, { tx } = {}) {
     const db = tx ?? this.#db;
     return db.orm.public.Submission.where({
-      participantionId: Number(participantionId),
+      participationId: Number(participationId),
     })
       .select('id')
       .first();
