@@ -1,4 +1,4 @@
-import { ERROR_MESSAGE } from '#constants';
+import { DB_ERROR, ERROR_MESSAGE } from '#constants';
 import {
   ConflictException,
   NotFoundException,
@@ -34,14 +34,24 @@ export class AuthService {
 
     const hashedPassword = await this.#passwordProvider.hash(password);
 
-    const user = await this.#userRepository.create({
-      email,
-      passwordHash: hashedPassword,
-      nickname,
-      role: 'USER',
-      grade: 'NORMAL',
-      provider: 'LOCAL',
-    });
+    let user;
+
+    try {
+      user = await this.#userRepository.create({
+        email,
+        passwordHash: hashedPassword,
+        nickname,
+        role: 'USER',
+        grade: 'NORMAL',
+        provider: 'LOCAL',
+      });
+    } catch (error) {
+      if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
+        throw new ConflictException(ERROR_MESSAGE.RESOURCE_CONFLICT);
+      }
+
+      throw error;
+    }
 
     const tokens = this.#tokenProvider.generateTokens(user);
 
