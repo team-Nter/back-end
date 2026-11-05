@@ -97,4 +97,70 @@ export class ParticipationService {
       userId,
     });
   }
+
+  async getParticipants({ challengeId, page, pageSize }) {
+    const challenge = await this.#challengeRepository.findById(challengeId);
+
+    if (!challenge || challenge.status !== 'APPROVED') {
+      throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
+    }
+
+    const participations =
+      await this.#participationRepository.findAllWithSubmissionByChallengeId(
+        challengeId,
+      );
+    const participants = participations
+      .map(({ id, joinedAt, user, submission }) => ({
+        id,
+        user: user ?? null,
+        submissionId: submission?.id ?? null,
+        likeCount: submission?.likes ?? 0,
+        submittedAt: submission?.submittedAt ?? null,
+        joinedAt,
+      }))
+      .sort((a, b) => this.#compareParticipants(a, b));
+
+    const totalCount = participants.length;
+    const offset = (page - 1) * pageSize;
+
+    return {
+      items: participants.slice(offset, offset + pageSize),
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
+  }
+
+  // 참여 현황 정렬 : 제출자(좋아요 많은 순 → 먼저 제출한 순) → 미제출자(먼저 참여한 순)
+  #compareParticipants(a, b) {
+    const aSubmitted = a.submissionId !== null;
+    const bSubmitted = b.submissionId !== null;
+
+    if (aSubmitted !== bSubmitted) {
+      return aSubmitted ? -1 : 1;
+    }
+
+    if (aSubmitted) {
+      if (a.likeCount !== b.likeCount) {
+        return b.likeCount - a.likeCount;
+      }
+
+      const submittedDiff = new Date(a.submittedAt) - new Date(b.submittedAt);
+
+      if (submittedDiff !== 0) {
+        return submittedDiff;
+      }
+    } else {
+      const joinedDiff = new Date(a.joinedAt) - new Date(b.joinedAt);
+
+      if (joinedDiff !== 0) {
+        return joinedDiff;
+      }
+    }
+
+    return a.id - b.id;
+  }
 }
