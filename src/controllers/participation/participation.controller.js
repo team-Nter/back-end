@@ -4,6 +4,7 @@ import { BaseController } from '../base.controller.js';
 import { validate } from '#middlewares';
 import {
   challengeIdParamSchema,
+  participantListQuerySchema,
   participationParamsSchema,
 } from './dto/participation.dto.js';
 
@@ -20,16 +21,25 @@ export class ParticipationController extends BaseController {
 
   routes() {
     this.router.get(
+      '/',
+      validate('params', challengeIdParamSchema),
+      validate('query', participantListQuerySchema),
+      (req, res) => this.getParticipants(req, res),
+    );
+
+    this.router.get(
       '/:userId',
       validate('params', participationParamsSchema),
-      (req, res) => this.getParticipation(req, res),
+      (req, res) => this.getParticipant(req, res),
     );
+
     this.router.post(
       '/',
       this.#authz.requireAuth,
       validate('params', challengeIdParamSchema),
       (req, res) => this.joinChallenge(req, res),
     );
+
     this.router.delete(
       '/me',
       this.#authz.requireAuth,
@@ -40,12 +50,25 @@ export class ParticipationController extends BaseController {
     return this.router;
   }
 
-  async getParticipation(req, res) {
+  async getParticipants(req, res) {
+    const { challengeId } = req.params;
+    const { page, pageSize } = req.query;
+    const participants = await this.#participationService.getParticipants({
+      challengeId,
+      page,
+      pageSize,
+    });
+
+    res.status(HTTP_STATUS.OK).json(participants);
+  }
+
+  async getParticipant(req, res) {
     const { challengeId, userId } = req.params;
     const participation = await this.#participationService.getParticipation({
       challengeId,
       userId,
     });
+
     res.status(HTTP_STATUS.OK).json(participation);
   }
 
@@ -56,6 +79,7 @@ export class ParticipationController extends BaseController {
       challengeId,
       userId,
     });
+
     res.status(HTTP_STATUS.CREATED).json(participation);
   }
 
@@ -66,6 +90,7 @@ export class ParticipationController extends BaseController {
       challengeId,
       userId,
     });
+
     res.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }
