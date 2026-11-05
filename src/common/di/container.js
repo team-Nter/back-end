@@ -59,13 +59,18 @@ export const createContainer = () => {
   });
 
   const challengeService = new ChallengeService({
+    db,
     challengeRepository,
     moderationLogRepository,
+    participationRepository,
+    submissionRepository,
   });
 
   const submissionService = new SubmissionService({
+    db,
     submissionRepository,
     challengeRepository,
+    participationRepository,
   });
   const participationService = new ParticipationService({
     db,
@@ -74,8 +79,10 @@ export const createContainer = () => {
   });
 
   const feedbackService = new FeedbackService({
+    db,
     feedbackRepository,
     submissionRepository,
+    challengeRepository,
   });
 
   const moderationLogService = new ModerationLogService({

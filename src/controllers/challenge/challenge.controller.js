@@ -56,6 +56,13 @@ export class ChallengeController extends BaseController {
       validate('query', adminChallengeDetailQuerySchema),
       (req, res) => this.getAdminChallengeDetail(req, res),
     );
+
+    this.router.get(
+      '/:challengeId',
+      validate('params', challengeIdParamSchema),
+      (req, res) => this.getChallengeDetail(req, res),
+    );
+
     return this.router;
   }
 
@@ -94,5 +101,13 @@ export class ChallengeController extends BaseController {
         req.query,
       );
     res.status(HTTP_STATUS.OK).json(adminChallengeDetail);
+  }
+
+  async getChallengeDetail(req, res) {
+    const challengeDetail = await this.#challengeService.getChallengeDetail(
+      req.params.challengeId,
+      req.user?.id,
+    );
+    res.status(HTTP_STATUS.OK).json(challengeDetail);
   }
 }

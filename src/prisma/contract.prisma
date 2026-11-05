@@ -132,7 +132,7 @@ model Submission {
 model SubmissionDraft {
   id              Int                        @id @default(autoincrement())
 
-  participationId Int
+  participationId Int                        @unique
   title           String?
   content         String                     @default("")
 

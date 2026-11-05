@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '#exceptions';
-import { CHALLENGE_STATUSES } from '#constants';
+import { CHALLENGE_STATUSES, ERROR_MESSAGE } from '#constants';
 
 const MY_CHALLENGE_FILTERS = {
   requested: (userId) => ({
@@ -23,12 +23,24 @@ const MY_CHALLENGE_FILTERS = {
 };
 
 export class ChallengeService {
+  #db;
   #challengeRepository;
   #moderationLogRepository;
+  #participationRepository;
+  #submissionRepository;
 
-  constructor({ challengeRepository, moderationLogRepository }) {
+  constructor({
+    db,
+    challengeRepository,
+    moderationLogRepository,
+    participationRepository,
+    submissionRepository,
+  }) {
+    this.#db = db;
     this.#challengeRepository = challengeRepository;
     this.#moderationLogRepository = moderationLogRepository;
+    this.#participationRepository = participationRepository;
+    this.#submissionRepository = submissionRepository;
   }
 
   async createChallenge(userId, data) {
@@ -64,6 +76,23 @@ export class ChallengeService {
         totalPages: Math.ceil(total / pageSize),
       },
     };
+  }
+
+  async getChallengeDetail(challengeId, userId) {
+    const challenge = await this.#challengeRepository.findById(challengeId);
+
+    if (!challenge || challenge.status !== 'APPROVED') {
+      throw new NotFoundException(ERROR_MESSAGE.CHALLENGE_NOT_FOUND);
+    }
+
+    const isClosed = new Date(challenge.deadlineAt) <= new Date();
+
+    const [myParticipation, bestSubmissions] = await Promise.all([
+      this.#findMyParticipation(challengeId, userId),
+      isClosed ? this.#getBestSubmissions(challengeId) : [],
+    ]);
+
+    return { ...challenge, myParticipation, bestSubmissions };
   }
 
   async getMyChallenges(userId, type, { page, pageSize, keyword }) {
@@ -177,6 +206,71 @@ export class ChallengeService {
       ...adjacent,
       moderation: moderation ?? null,
     };
+  }
+
+  // 로그인 + 참여 중일 때만 { id }, 아니면 null
+  async #findMyParticipation(challengeId, userId) {
+    if (!userId) return null;
+
+    const participation =
+      await this.#participationRepository.findByChallengeIdAndUserId({
+        challengeId,
+        userId,
+      });
+
+    return participation ? { id: participation.id } : null;
+  }
+
+  // 최다 추천 번역 : 잠금 없이 채택 여부를 먼저 확인하고, 미처리일 때만 채택 처리
+  async #getBestSubmissions(challengeId) {
+    const challenge =
+      await this.#challengeRepository.findSelectedAt(challengeId);
+
+    if (challenge && !challenge.selectedAt) {
+      await this.#selectBestSubmissions(challengeId);
+    }
+
+    const selected =
+      await this.#submissionRepository.findSelectedByChallengeId(challengeId);
+
+    return selected.map(
+      ({ id, content, likes, submittedAt, participation }) => ({
+        id,
+        content,
+        likeCount: likes,
+        submittedAt,
+        author: participation.user,
+      }),
+    );
+  }
+
+  // 채택 처리 : 잠금 후 다시 확인해서 동시 첫 조회의 중복 채택 방지
+  async #selectBestSubmissions(challengeId) {
+    await this.#db.transaction(async (tx) => {
+      const challenge = await this.#challengeRepository.findSelectedAtForUpdate(
+        challengeId,
+        { tx },
+      );
+
+      if (!challenge || challenge.selectedAt) return;
+
+      const candidates =
+        await this.#submissionRepository.findLikeCountsByChallengeId(
+          challengeId,
+          { tx },
+        );
+      const maxLikes = Math.max(0, ...candidates.map((s) => s.likes));
+
+      if (maxLikes > 0) {
+        const selectedIds = candidates
+          .filter((s) => s.likes === maxLikes)
+          .map((s) => s.id);
+
+        await this.#submissionRepository.markSelected(selectedIds, { tx });
+      }
+
+      await this.#challengeRepository.markSelected(challengeId, { tx });
+    });
   }
 
   #buildAdminFilters({ status, keyword } = {}) {
