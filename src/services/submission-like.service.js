@@ -13,11 +13,10 @@ export class SubmissionLikeService {
 
   createSubmissionLike(userId, submissionId) {
     return this.#db.transaction(async (tx) => {
-      const submission =
-        await this.#submissionRepository.findReferenceByIdForUpdate(
-          submissionId,
-          { tx },
-        );
+      const submission = await this.#submissionRepository.findIdForKeyShare(
+        submissionId,
+        { tx },
+      );
       if (!submission) {
         throw new NotFoundException('작성물을 찾을 수 없습니다.');
       }
@@ -28,11 +27,10 @@ export class SubmissionLikeService {
 
   deleteSubmissionLike(userId, submissionId) {
     return this.#db.transaction(async (tx) => {
-      const submission =
-        await this.#submissionRepository.findReferenceByIdForUpdate(
-          submissionId,
-          { tx },
-        );
+      const submission = await this.#submissionRepository.findIdForKeyShare(
+        submissionId,
+        { tx },
+      );
       if (!submission) {
         throw new NotFoundException('작성물을 찾을 수 없습니다.');
       }
