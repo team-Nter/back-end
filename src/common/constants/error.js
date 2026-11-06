@@ -9,6 +9,7 @@ export const ERROR_MESSAGE = {
   USER_NOT_FOUND: '유저를 찾을 수 없습니다.',
   EMAIL_REQUIRED: '이메일은 필수입니다.',
   EMAIL_ALREADY_EXISTS: '이미 사용 중인 이메일입니다.',
+  NICKNAME_ALREADY_EXISTS: '이미 사용 중인 닉네임입니다.',
   FAILED_TO_FETCH_USERS: '유저 목록을 불러오지 못했습니다.',
   FAILED_TO_FETCH_USER: '유저 정보를 불러오지 못했습니다.',
   FAILED_TO_CREATE_USER: '유저를 생성하지 못했습니다.',
