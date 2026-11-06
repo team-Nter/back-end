@@ -99,7 +99,7 @@ export class SubmissionDraftService {
       }
 
       const participation =
-        await this.#participationRepository.findByChallengeIdAndUserId(
+        await this.#participationRepository.findByChallengeIdAndUserIdForUpdate(
           { challengeId, userId },
           { tx },
         );
