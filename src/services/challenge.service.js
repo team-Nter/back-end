@@ -95,10 +95,13 @@ export class ChallengeService {
     return { ...challenge, myParticipation, bestSubmissions };
   }
 
-  async getMyChallenges(userId, type, { page, pageSize, keyword }) {
+  async getMyChallenges(userId, type, { page, pageSize, keyword, status }) {
     const typeFilters = MY_CHALLENGE_FILTERS[type](userId);
 
     const filters = { ...typeFilters, keyword };
+    if (type === 'requested' && status) {
+      filters.statuses = [status];
+    }
 
     const [items, { total }] = await Promise.all([
       this.#challengeRepository.findMany({ page, pageSize, ...filters }),
@@ -125,11 +128,17 @@ export class ChallengeService {
     const isPending = challenge.status === 'PENDING';
     const hasActivity =
       challenge.participations > 0 || challenge.submissions > 0;
+    const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
+
+    const moderation = hasModeration
+      ? await this.#moderationLogRepository.findLatestByChallenge(id)
+      : null;
 
     return {
       ...challenge,
       canEdit: isPending,
       canCancel: isPending && !hasActivity,
+      moderation: moderation ?? null,
     };
   }
 
