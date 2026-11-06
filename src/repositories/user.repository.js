@@ -24,6 +24,10 @@ export class UserRepository {
       .first();
   }
 
+  findByNickname(nickname) {
+    return this.#db.orm.public.User.where({ nickname }).first();
+  }
+
   findByIdWithAuthFields(id) {
     return this.#db.orm.public.User.where({ id: Number(id) })
       .select(...this.#userFields)

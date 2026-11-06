@@ -1,4 +1,4 @@
-import { ERROR_MESSAGE } from '#constants';
+import { DB_ERROR, ERROR_MESSAGE } from '#constants';
 import {
   ConflictException,
   NotFoundException,
@@ -17,21 +17,41 @@ export class AuthService {
   }
 
   async signUp({ email, password, nickname }) {
-    const foundUser = await this.#userRepository.findByEmail(email);
-    if (foundUser) {
-      throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
+    const [foundUserByEmail, foundUserByNickname] = await Promise.all([
+      this.#userRepository.findByEmail(email),
+      this.#userRepository.findByNickname(nickname),
+    ]);
+
+    const conflictsMessage = [];
+    if (foundUserByEmail)
+      conflictsMessage.push(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
+    if (foundUserByNickname)
+      conflictsMessage.push(ERROR_MESSAGE.NICKNAME_ALREADY_EXISTS);
+
+    if (conflictsMessage.length > 0) {
+      throw new ConflictException(conflictsMessage.join('\n'));
     }
 
     const hashedPassword = await this.#passwordProvider.hash(password);
 
-    const user = await this.#userRepository.create({
-      email,
-      passwordHash: hashedPassword,
-      nickname,
-      role: 'USER',
-      grade: 'NORMAL',
-      provider: 'LOCAL',
-    });
+    let user;
+
+    try {
+      user = await this.#userRepository.create({
+        email,
+        passwordHash: hashedPassword,
+        nickname,
+        role: 'USER',
+        grade: 'NORMAL',
+        provider: 'LOCAL',
+      });
+    } catch (error) {
+      if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
+        throw new ConflictException(ERROR_MESSAGE.RESOURCE_CONFLICT);
+      }
+
+      throw error;
+    }
 
     const tokens = this.#tokenProvider.generateTokens(user);
 
