@@ -95,7 +95,7 @@ export class SubmissionDraftService {
         challenge.status !== 'APPROVED' ||
         new Date(challenge.deadlineAt).getTime() <= Date.now()
       ) {
-        throw new ConflictException('저장할 수 없는 챌린지입니다.');
+        throw new ConflictException('삭제할 수 없는 챌린지입니다.');
       }
 
       const participation =
