@@ -4,6 +4,7 @@ import {
   UserRepository,
   ChallengeRepository,
   SubmissionRepository,
+  SubmissionDraftRepository,
   ModerationLogRepository,
   ParticipationRepository,
   FeedbackRepository,
@@ -14,6 +15,7 @@ import {
   UserService,
   ChallengeService,
   SubmissionService,
+  SubmissionDraftService,
   ModerationLogService,
   ParticipationService,
   FeedbackService,
@@ -24,6 +26,7 @@ import {
   UserController,
   ChallengeController,
   SubmissionController,
+  SubmissionDraftController,
   ModerationLogController,
   ParticipationController,
   FeedbackController,
@@ -36,6 +39,7 @@ export const createContainer = () => {
   // Repositories
   const userRepository = new UserRepository({ db });
   const submissionRepository = new SubmissionRepository({ db });
+  const submissionDraftRepository = new SubmissionDraftRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const moderationLogRepository = new ModerationLogRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
@@ -76,6 +80,13 @@ export const createContainer = () => {
     db,
     participationRepository,
     challengeRepository,
+  });
+
+  const submissionDraftService = new SubmissionDraftService({
+    db,
+    submissionDraftRepository,
+    challengeRepository,
+    participationRepository,
   });
 
   const feedbackService = new FeedbackService({
@@ -127,6 +138,10 @@ export const createContainer = () => {
     challengeService,
     authz: authorizationMiddleware,
   });
+  const submissionDraftController = new SubmissionDraftController({
+    submissionDraftService,
+    authz: authorizationMiddleware,
+  });
   const participationController = new ParticipationController({
     participationService,
     authz: authorizationMiddleware,
@@ -146,6 +161,7 @@ export const createContainer = () => {
     userController,
     challengeController,
     submissionController,
+    submissionDraftController,
     moderationLogController,
     participationController,
     feedbackController,
