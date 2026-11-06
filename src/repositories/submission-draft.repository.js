@@ -1,4 +1,4 @@
-export class submissionDraftRepository {
+export class SubmissionDraftRepository {
   #db;
   #fields = ['id', 'title', 'content', 'createdAt', 'updatedAt'];
 
