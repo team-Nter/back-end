@@ -41,10 +41,11 @@ export class SubmissionDraftService {
 
   async putSubmissionDraft(challengeId, userId, title, content) {
     return this.#db.transaction(async (tx) => {
-      const challenge = await this.#challengeRepository.findByIdForUpdate(
-        challengeId,
-        { tx },
-      );
+      const challenge =
+        await this.#challengeRepository.findStatusAndDeadlineForShare(
+          challengeId,
+          { tx },
+        );
 
       if (!challenge) {
         throw new NotFoundException('챌린지를 찾을 수 없습니다.');
@@ -82,10 +83,11 @@ export class SubmissionDraftService {
 
   async deleteSubmissionDraft(challengeId, userId) {
     return this.#db.transaction(async (tx) => {
-      const challenge = await this.#challengeRepository.findByIdForUpdate(
-        challengeId,
-        { tx },
-      );
+      const challenge =
+        await this.#challengeRepository.findStatusAndDeadlineForShare(
+          challengeId,
+          { tx },
+        );
 
       if (!challenge) {
         throw new NotFoundException('챌린지를 찾을 수 없습니다.');

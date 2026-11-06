@@ -51,6 +51,13 @@ export class ChallengeRepository {
       .first();
   }
 
+  findStatusAndDeadlineForShare(id, { tx }) {
+    return tx.orm.public.Challenge.where({ id: Number(id) })
+      .select('status', 'deadlineAt')
+      .forShare()
+      .first();
+  }
+
   // 채택 처리 여부 사전 확인용 : 행을 잠그지 않고 조회
   findSelectedAt(id) {
     return this.#orm()
