@@ -4,6 +4,7 @@ import {
   UserRepository,
   ChallengeRepository,
   SubmissionRepository,
+  SubmissionLikeRepository,
   ModerationLogRepository,
   ParticipationRepository,
   FeedbackRepository,
@@ -14,6 +15,7 @@ import {
   UserService,
   ChallengeService,
   SubmissionService,
+  SubmissionLikeService,
   ModerationLogService,
   ParticipationService,
   FeedbackService,
@@ -24,6 +26,7 @@ import {
   UserController,
   ChallengeController,
   SubmissionController,
+  SubmissionLikeController,
   ModerationLogController,
   ParticipationController,
   FeedbackController,
@@ -36,6 +39,7 @@ export const createContainer = () => {
   // Repositories
   const userRepository = new UserRepository({ db });
   const submissionRepository = new SubmissionRepository({ db });
+  const submissionLikeRepository = new SubmissionLikeRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const moderationLogRepository = new ModerationLogRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
@@ -76,6 +80,11 @@ export const createContainer = () => {
     db,
     participationRepository,
     challengeRepository,
+  });
+  const submissionLikeService = new SubmissionLikeService({
+    db,
+    submissionLikeRepository,
+    submissionRepository,
   });
 
   const feedbackService = new FeedbackService({
@@ -127,6 +136,10 @@ export const createContainer = () => {
     challengeService,
     authz: authorizationMiddleware,
   });
+  const submissionLikeController = new SubmissionLikeController({
+    submissionLikeService,
+    authz: authorizationMiddleware,
+  });
   const participationController = new ParticipationController({
     participationService,
     authz: authorizationMiddleware,
@@ -146,6 +159,7 @@ export const createContainer = () => {
     userController,
     challengeController,
     submissionController,
+    submissionLikeController,
     moderationLogController,
     participationController,
     feedbackController,
