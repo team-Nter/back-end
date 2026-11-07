@@ -22,6 +22,11 @@ export class SubmissionLikeService {
       }
 
       await this.#submissionLikeRepository.create(userId, submissionId, { tx });
+      const likeCount = await this.#submissionRepository.countLikesBySubmissionId(
+        submissionId,
+        { tx },
+      );
+      return { likeCount };
     });
   }
 
@@ -36,6 +41,11 @@ export class SubmissionLikeService {
       }
 
       await this.#submissionLikeRepository.delete(userId, submissionId, { tx });
+      const likeCount = await this.#submissionRepository.countLikesBySubmissionId(
+        submissionId,
+        { tx },
+      );
+      return { likeCount };
     });
   }
 }

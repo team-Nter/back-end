@@ -35,21 +35,21 @@ export class SubmissionLikeController extends BaseController {
   async createSubmissionLike(req, res) {
     const { submissionId } = req.params;
     const userId = req.user.id;
-    await this.#submissionLikeService.createSubmissionLike(
+    const result = await this.#submissionLikeService.createSubmissionLike(
       userId,
       submissionId,
     );
 
-    res.status(HTTP_STATUS.NO_CONTENT).send();
+    res.status(HTTP_STATUS.OK).json(result);
   }
 
   async deleteSubmissionLike(req, res) {
     const { submissionId } = req.params;
     const userId = req.user.id;
-    await this.#submissionLikeService.deleteSubmissionLike(
+    const result = await this.#submissionLikeService.deleteSubmissionLike(
       userId,
       submissionId,
     );
-    res.status(HTTP_STATUS.NO_CONTENT).send();
+    res.status(HTTP_STATUS.OK).json(result);
   }
 }

@@ -15,6 +15,15 @@ export class SubmissionRepository {
     this.#db = db;
   }
 
+  async countLikesBySubmissionId(submissionId, { tx } = {}) {
+    const db = tx ?? this.#db;
+    const { likeCount } = await db.orm.public.SubmissionLike.where({
+      submissionId: Number(submissionId),
+    }).aggregate((aggregate) => ({ likeCount: aggregate.count() }));
+
+    return likeCount;
+  }
+
   // findById
   findById(id, { tx } = {}) {
     const db = tx ?? this.#db;
