@@ -15,6 +15,7 @@ export class Controller extends BaseController {
   #moderationLogController;
   #participationController;
   #feedbackController;
+  #socialController;
 
   constructor({
     authController,
@@ -24,6 +25,7 @@ export class Controller extends BaseController {
     moderationLogController,
     participationController,
     feedbackController,
+    socialController,
   }) {
     super();
     this.#authController = authController;
@@ -33,6 +35,7 @@ export class Controller extends BaseController {
     this.#moderationLogController = moderationLogController;
     this.#participationController = participationController;
     this.#feedbackController = feedbackController;
+    this.#socialController = socialController;
   }
 
   routes() {
@@ -58,6 +61,8 @@ export class Controller extends BaseController {
       '/challenges/:challengeId/moderation-logs',
       this.#moderationLogController.routes(),
     );
+    this.router.use('/auth', this.#socialController.routes());
+
     return this.router;
   }
 

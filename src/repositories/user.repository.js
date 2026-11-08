@@ -47,4 +47,13 @@ export class UserRepository {
   create(data) {
     return this.#db.orm.public.User.select(...this.#userFields).create(data);
   }
+
+  findBySub(sub) {
+    return this.#db.orm.public.User.where({
+      providerId: sub,
+      provider: 'GOOGLE',
+    })
+      .select(...this.#userFields, 'providerId')
+      .first();
+  }
 }
