@@ -87,12 +87,12 @@ export class ChallengeService {
 
     const isClosed = new Date(challenge.deadlineAt) <= new Date();
 
-    const [myParticipation, bestSubmissions] = await Promise.all([
-      this.#findMyParticipation(challengeId, userId),
+    const [myParticipationAndSubmission, bestSubmissions] = await Promise.all([
+      this.#findMyParticipationAndSubmission(challengeId, userId),
       isClosed ? this.#getBestSubmissions(challengeId) : [],
     ]);
 
-    return { ...challenge, myParticipation, bestSubmissions };
+    return { ...challenge, ...myParticipationAndSubmission, bestSubmissions };
   }
 
   async getMyChallenges(userId, type, { page, pageSize, keyword }) {
@@ -202,17 +202,26 @@ export class ChallengeService {
     };
   }
 
-  // 로그인 + 참여 중일 때만 { id }, 아니면 null
-  async #findMyParticipation(challengeId, userId) {
-    if (!userId) return null;
+  // 로그인 + 참여 중이면 참여 id와 제출물 id (미제출이면 null), 아니면 둘 다 null
+  async #findMyParticipationAndSubmission(challengeId, userId) {
+    const empty = { myParticipation: null, mySubmissionId: null };
+
+    if (!userId) return empty;
 
     const participation =
-      await this.#participationRepository.findByChallengeIdAndUserId({
-        challengeId,
-        userId,
-      });
+      await this.#participationRepository.findWithSubmissionByChallengeIdAndUserId(
+        {
+          challengeId,
+          userId,
+        },
+      );
 
-    return participation ? { id: participation.id } : null;
+    if (!participation) return empty;
+
+    return {
+      myParticipation: { id: participation.id },
+      mySubmissionId: participation.submission?.id ?? null,
+    };
   }
 
   // 최다 추천 번역 : 잠금 없이 채택 여부를 먼저 확인하고, 미처리일 때만 채택 처리
