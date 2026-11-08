@@ -56,9 +56,13 @@ export class SubmissionRepository {
       .first();
   }
 
-  findIdForKeyShare(id, { tx }) {
+  findIdForKeyShare(id, { tx } = {}) {
+    if (!tx) {
+      throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');
+    }
+
     return tx.orm.public.Submission.where({ id: Number(id) })
-      .select('id')
+      .select('id', 'challengeId')
       .forKeyShare()
       .first();
   }

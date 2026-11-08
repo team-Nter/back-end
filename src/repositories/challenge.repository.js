@@ -51,7 +51,11 @@ export class ChallengeRepository {
       .first();
   }
 
-  findStatusAndDeadlineForShare(id, { tx }) {
+  findStatusAndDeadlineForShare(id, { tx } = {}) {
+    if (!tx) {
+      throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');
+    }
+
     return tx.orm.public.Challenge.where({ id: Number(id) })
       .select('status', 'deadlineAt')
       .forShare()

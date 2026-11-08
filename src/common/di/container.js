@@ -96,6 +96,7 @@ export const createContainer = () => {
     db,
     submissionLikeRepository,
     submissionRepository,
+    challengeRepository,
   });
 
   const feedbackService = new FeedbackService({
