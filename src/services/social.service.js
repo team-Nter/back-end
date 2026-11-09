@@ -1,4 +1,4 @@
-import { ERROR_MESSAGE } from '#constants';
+import { DB_ERROR, ERROR_MESSAGE } from '#constants';
 import { ConflictException, UnauthorizedException } from '#exceptions';
 
 export class SocialService {
@@ -56,18 +56,24 @@ export class SocialService {
       // 프론트에서 어떻게 보여줄지
     }
 
-    const user = await this.#userRepository.create({
-      email: userInfo.email,
-      provider: 'GOOGLE',
-      providerId: userInfo.sub,
-    });
+    let user;
+    try {
+      user = await this.#userRepository.create({
+        email: userInfo.email,
+        provider: 'GOOGLE',
+        providerId: userInfo.sub,
+      });
+    } catch (error) {
+      if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
+        throw new ConflictException(ERROR_MESSAGE.RESOURCE_CONFLICT);
+      }
+
+      throw error;
+    }
 
     const tokens = this.#tokenProvider.generateTokens(user);
 
     return { user, tokens };
-
-    // 회원이 없으면 Nter 회원 생성
-    // Nter 자체 Access Token과 Refresh Token 발급
   }
 
   async googleLogin(code, codeVerifier) {
