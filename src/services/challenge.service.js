@@ -289,7 +289,7 @@ export class ChallengeService {
 
   #buildAdminFilters({ status, keyword } = {}) {
     return {
-      statuses: status ? [status] : CHALLENGE_STATUSES,
+      statuses: status?.length ? status : CHALLENGE_STATUSES,
       keyword,
     };
   }
