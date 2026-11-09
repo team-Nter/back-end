@@ -10,11 +10,13 @@ import {
 export class SocialController extends BaseController {
   #socialService;
   #cookieProvider;
+  #clientBaseUrl;
 
-  constructor({ socialService, cookieProvider }) {
+  constructor({ socialService, cookieProvider, config }) {
     super();
     this.#socialService = socialService;
     this.#cookieProvider = cookieProvider;
+    this.#clientBaseUrl = config.CLIENT_BASE_URL;
   }
 
   routes() {
@@ -35,37 +37,53 @@ export class SocialController extends BaseController {
   async googleRedirect(req, res) {
     const { next } = req.query; // 스키마로 유효한지 확인
 
-    const googleAuthUrl = this.#socialService.createGoogleAuth();
-    console.log('googleRedirect');
+    const { googleAuthUrl, transactionNonce, codeVerifier } =
+      this.#socialService.createGoogleAuth({ next });
+
+    // transactionNonce와 codeVerifier를 임시 쿠키에 저장
+    this.#cookieProvider.setSocialCookies(res, {
+      transactionNonce,
+      codeVerifier,
+    });
+
     return res.redirect(googleAuthUrl);
   }
 
   async googleCallback(req, res) {
-    const {
-      code,
+    const { code, state, error } = req.query;
+
+    const { transactionNonce, codeVerifier } =
+      this.#cookieProvider.getSocialCookies(req);
+
+    const stateResult = this.#socialService.verifyGoogleState({
       state,
-      error,
-      error_description: errorDescription,
-    } = req.query;
+      transactionNonce,
+      codeVerifier,
+    });
+
+    this.#cookieProvider.clearSocialCookies(res);
+
+    if (!stateResult) {
+      throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+    }
 
     if (error) {
-      throw new UnauthorizedException(
-        errorDescription || ERROR_MESSAGE.SOCIAL_AUTH_FAILED,
-      );
+      throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
     if (!code || typeof code !== 'string') {
-      throw new BadRequestException('invalid code'); // 에러메시지 추천
+      throw new BadRequestException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
-    const { user, tokens } = await this.#socialService.googleLogin(code, state);
-
-    //반환된 Nter Access Token과 Refresh Token 확인
+    const { tokens } = await this.#socialService.googleLogin(
+      code,
+      codeVerifier,
+    );
 
     this.#cookieProvider.setAuthCookies(res, tokens);
 
-    // const redirectUrl = `${config.CLIENT_BASE_URL}/${next}`;
+    const redirectUrl = new URL(stateResult.next, this.#clientBaseUrl);
 
-    // return res.redirect(redirectUrl); next를 어떻게 가져오지
+    return res.redirect(redirectUrl.toString());
   }
 }

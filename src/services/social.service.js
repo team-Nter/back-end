@@ -5,20 +5,39 @@ export class SocialService {
   #userRepository;
   #socialProvider;
   #tokenProvider;
+  #oauthStateProvider;
 
-  constructor({ userRepository, socialProvider, tokenProvider }) {
+  constructor({
+    userRepository,
+    socialProvider,
+    tokenProvider,
+    oauthStateProvider,
+  }) {
     this.#userRepository = userRepository;
     this.#socialProvider = socialProvider;
     this.#tokenProvider = tokenProvider;
+    this.#oauthStateProvider = oauthStateProvider;
   }
 
-  createGoogleAuth() {
-    console.log('createGoogleAuth');
-    return this.#socialProvider.createGoogleUrl();
+  createGoogleAuth({ next }) {
+    const stateData = this.#oauthStateProvider.createState({
+      next,
+    });
+
+    const googleAuthUrl = this.#socialProvider.createGoogleUrl({
+      state: stateData.state,
+      codeChallenge: stateData.codeChallenge,
+    });
+
+    return {
+      googleAuthUrl,
+      transactionNonce: stateData.transactionNonce,
+      codeVerifier: stateData.codeVerifier,
+    };
   }
 
   async loginOrCreateGoogleUser(userInfo) {
-    if (!userInfo.email_verified) {
+    if (!userInfo.sub || !userInfo.email || userInfo.email_verified !== true) {
       throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
     const existingUser = await this.#userRepository.findBySub(userInfo.sub);
@@ -27,9 +46,7 @@ export class SocialService {
       const tokens = this.#tokenProvider.generateTokens(existingUser);
       return { user: existingUser, tokens };
     }
-    // providerId중복은 로그인되는데 이메일 중복은 에러처리?
-    // 기존 Google 회원은 로그인하고, 기존 LOCAL 회원과 이메일이 충돌하면 가입을 거부
-    // 이메일 중복
+
     const existingEmail = await this.#userRepository.findByEmail(
       userInfo.email,
     );
@@ -53,13 +70,28 @@ export class SocialService {
     // Nter 자체 Access Token과 Refresh Token 발급
   }
 
-  async googleLogin(code, state) {
-    this.#socialProvider.compareState(state);
-    const googleTokens = await this.#socialProvider.getGoogleToken(code);
+  async googleLogin(code, codeVerifier) {
+    const googleTokens = await this.#socialProvider.getGoogleToken(
+      code,
+      codeVerifier,
+    );
+
+    if (!googleTokens.access_token) {
+      throw new Error(ERROR_MESSAGE.NO_AUTH_TOKEN);
+    }
+
     const userInfo = await this.#socialProvider.getGoogleUserInfo(
       googleTokens.access_token,
     );
 
     return this.loginOrCreateGoogleUser(userInfo);
+  }
+
+  verifyGoogleState({ state, transactionNonce, codeVerifier }) {
+    return this.#oauthStateProvider.verifyState({
+      state,
+      transactionNonce,
+      codeVerifier,
+    });
   }
 }

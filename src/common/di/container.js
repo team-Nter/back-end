@@ -36,6 +36,7 @@ import {
   TokenProvider,
   CookieProvider,
   SocialProvider,
+  OAuthStateProvider,
 } from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
 
@@ -54,6 +55,7 @@ export const createContainer = () => {
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
   const socialProvider = new SocialProvider({ config });
+  const oauthStateProvider = new OAuthStateProvider({ config });
 
   // Services
   const authService = new AuthService({
@@ -109,6 +111,7 @@ export const createContainer = () => {
     userRepository,
     socialProvider,
     tokenProvider,
+    oauthStateProvider,
   });
 
   // Middlewares
@@ -158,6 +161,7 @@ export const createContainer = () => {
   const socialController = new SocialController({
     socialService,
     cookieProvider,
+    config,
   });
 
   const controller = new Controller({

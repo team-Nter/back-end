@@ -1,5 +1,5 @@
 import { ERROR_MESSAGE } from '#constants';
-import { UnauthorizedException } from '#exceptions';
+import { ForbiddenException, UnauthorizedException } from '#exceptions';
 import { URLSearchParams } from 'node:url';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -10,24 +10,22 @@ export class SocialProvider {
   #googleClientId;
   #googleClientSecret;
   #googleRedirectUrl;
-  #state;
 
   constructor({ config }) {
     this.#googleClientId = config.GOOGLE_CLIENT_ID;
     this.#googleClientSecret = config.GOOGLE_CLIENT_SECRET;
     this.#googleRedirectUrl = `${config.API_BASE_URL}/auth/google`;
-    this.#state = config.OAUTH_STATE_SECRET;
   }
 
-  createGoogleUrl() {
-    console.log('clientId:', this.#googleClientId);
-    console.log('redirectUrl:', this.#googleRedirectUrl);
+  createGoogleUrl({ state, codeChallenge }) {
     const params = new URLSearchParams({
       client_id: this.#googleClientId,
       redirect_uri: this.#googleRedirectUrl,
       response_type: 'code',
       scope: 'openid email profile',
-      state: this.#state,
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
     });
     const url = `${GOOGLE_AUTH_URL}?${params.toString()}`;
 
@@ -36,13 +34,14 @@ export class SocialProvider {
     return url;
   }
 
-  async getGoogleToken(code) {
+  async getGoogleToken(code, codeVerifier) {
     const params = new URLSearchParams({
       code,
       client_id: this.#googleClientId,
       client_secret: this.#googleClientSecret,
       redirect_uri: this.#googleRedirectUrl,
       grant_type: 'authorization_code',
+      code_verifier: codeVerifier,
     });
 
     const response = await fetch(TOKEN_URL, {
@@ -54,11 +53,23 @@ export class SocialProvider {
     });
 
     const data = await response.json();
-    console.log('data', data);
+
     if (!response.ok) {
-      throw new Error(
-        `Google Token Request Failed: ${data.error_description ?? data.error}`,
-      ); // 에러 수정하기
+      switch (data.error) {
+        case 'invalid_grant':
+          throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+
+        case 'invalid_client':
+          throw new Error(ERROR_MESSAGE.SOCIAL_CONFIG_ERROR);
+
+        case 'invalid_request':
+        case 'unauthorized_client':
+        case 'unsupported_grant_type':
+          throw new Error(ERROR_MESSAGE.SOCIAL_REQUEST_FAILED);
+
+        default:
+          throw new Error(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+      }
     }
 
     return data;
@@ -75,18 +86,17 @@ export class SocialProvider {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        `Google UserInfo Request Failed: ${data.error_description ?? data.error}`,
-      ); // 에러 수정하기
+      if (response.status === 401) {
+        throw new UnauthorizedException(ERROR_MESSAGE.UNAUTHORIZED);
+      }
+
+      if (response.status === 403) {
+        throw new ForbiddenException(ERROR_MESSAGE.FORBIDDEN);
+      }
+
+      throw new Error(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
     return data;
-  }
-
-  compareState(state) {
-    const isSame = this.#state === state;
-    if (!isSame) {
-      throw new UnauthorizedException(ERROR_MESSAGE.INVALID_SOCIAL_AUTH_STATE);
-    }
   }
 }

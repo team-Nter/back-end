@@ -37,4 +37,35 @@ export class CookieProvider {
       path: '/',
     });
   }
+
+  setSocialCookies(res, { transactionNonce, codeVerifier }) {
+    const options = {
+      httpOnly: true,
+      secure: this.#isProduction,
+      sameSite: 'lax',
+      maxAge: 10 * MINUTE_IN_MS,
+      path: '/',
+    };
+
+    res.cookie('oauthTransactionNonce', transactionNonce, options);
+    res.cookie('oauthCodeVerifier', codeVerifier, options);
+  }
+
+  getSocialCookies(req) {
+    return {
+      transactionNonce: req.cookies.oauthTransactionNonce,
+      codeVerifier: req.cookies.oauthCodeVerifier,
+    };
+  }
+
+  clearSocialCookies(res) {
+    const options = {
+      secure: this.#isProduction,
+      sameSite: 'lax',
+      path: '/',
+    };
+
+    res.clearCookie('oauthTransactionNonce', options);
+    res.clearCookie('oauthCodeVerifier', options);
+  }
 }
