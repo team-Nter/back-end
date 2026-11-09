@@ -5,6 +5,8 @@ import {
 } from '#exceptions';
 import { CHALLENGE_STATUSES, ERROR_MESSAGE } from '#constants';
 
+const MAX_PAGE = 100;
+
 const MY_CHALLENGE_FILTERS = {
   requested: (userId) => ({
     requestorId: userId,
@@ -73,7 +75,7 @@ export class ChallengeService {
         page,
         pageSize,
         totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.min(Math.ceil(total / pageSize), MAX_PAGE),
       },
     };
   }
@@ -114,7 +116,7 @@ export class ChallengeService {
         page,
         pageSize,
         totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.min(Math.ceil(total / pageSize), MAX_PAGE),
       },
     };
   }
@@ -180,7 +182,7 @@ export class ChallengeService {
         page,
         pageSize,
         totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.min(Math.ceil(total / pageSize), MAX_PAGE),
       },
     };
   }
