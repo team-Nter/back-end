@@ -35,12 +35,11 @@ export class SocialController extends BaseController {
   }
 
   async googleRedirect(req, res) {
-    const { next } = req.query; // 스키마로 유효한지 확인
+    const { next } = req.query;
 
     const { googleAuthUrl, transactionNonce, codeVerifier } =
       this.#socialService.createGoogleAuth({ next });
 
-    // transactionNonce와 codeVerifier를 임시 쿠키에 저장
     this.#cookieProvider.setSocialCookies(res, {
       transactionNonce,
       codeVerifier,
@@ -64,25 +63,41 @@ export class SocialController extends BaseController {
     this.#cookieProvider.clearSocialCookies(res);
 
     if (!stateResult) {
-      throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+      return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
     if (error) {
-      throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+      return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
     if (!code || typeof code !== 'string') {
-      throw new BadRequestException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+      return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
-    const { tokens } = await this.#socialService.googleLogin(
-      code,
-      codeVerifier,
-    );
+    try {
+      const { tokens } = await this.#socialService.googleLogin(
+        code,
+        codeVerifier,
+      );
 
-    this.#cookieProvider.setAuthCookies(res, tokens);
+      this.#cookieProvider.setAuthCookies(res, tokens);
 
-    const redirectUrl = new URL(stateResult.next, this.#clientBaseUrl);
+      const redirectUrl = new URL(stateResult.next, this.#clientBaseUrl);
+
+      return res.redirect(redirectUrl.toString());
+    } catch (error) {
+      if (error.message === ERROR_MESSAGE.EMAIL_ALREADY_EXISTS) {
+        return this.#redirectToLogin(res, 'email_already_exists');
+      }
+
+      return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+    }
+  }
+
+  #redirectToLogin(res, error) {
+    const redirectUrl = new URL('/login', this.#clientBaseUrl);
+
+    redirectUrl.searchParams.set('error', error);
 
     return res.redirect(redirectUrl.toString());
   }

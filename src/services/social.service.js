@@ -53,7 +53,6 @@ export class SocialService {
 
     if (existingEmail) {
       throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
-      // 프론트에서 어떻게 보여줄지
     }
 
     let user;

@@ -27,11 +27,7 @@ export class SocialProvider {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
     });
-    const url = `${GOOGLE_AUTH_URL}?${params.toString()}`;
-
-    console.log('Google Auth URL:', url);
-
-    return url;
+    return `${GOOGLE_AUTH_URL}?${params.toString()}`;
   }
 
   async getGoogleToken(code, codeVerifier) {
