@@ -15,6 +15,15 @@ export class SubmissionRepository {
     this.#db = db;
   }
 
+  async countLikesBySubmissionId(submissionId, { tx } = {}) {
+    const db = tx ?? this.#db;
+    const { likeCount } = await db.orm.public.SubmissionLike.where({
+      submissionId: Number(submissionId),
+    }).aggregate((aggregate) => ({ likeCount: aggregate.count() }));
+
+    return likeCount;
+  }
+
   // findById
   findById(id, { tx } = {}) {
     const db = tx ?? this.#db;
@@ -44,6 +53,17 @@ export class SubmissionRepository {
       participationId: Number(participationId),
     })
       .select('id')
+      .first();
+  }
+
+  findIdForKeyShare(id, { tx } = {}) {
+    if (!tx) {
+      throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');
+    }
+
+    return tx.orm.public.Submission.where({ id: Number(id) })
+      .select('id', 'challengeId')
+      .forKeyShare()
       .first();
   }
 

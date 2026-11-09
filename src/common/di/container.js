@@ -5,6 +5,7 @@ import {
   ChallengeRepository,
   SubmissionRepository,
   SubmissionDraftRepository,
+  SubmissionLikeRepository,
   ModerationLogRepository,
   ParticipationRepository,
   FeedbackRepository,
@@ -16,6 +17,7 @@ import {
   ChallengeService,
   SubmissionService,
   SubmissionDraftService,
+  SubmissionLikeService,
   ModerationLogService,
   ParticipationService,
   FeedbackService,
@@ -27,6 +29,7 @@ import {
   ChallengeController,
   SubmissionController,
   SubmissionDraftController,
+  SubmissionLikeController,
   ModerationLogController,
   ParticipationController,
   FeedbackController,
@@ -40,6 +43,7 @@ export const createContainer = () => {
   const userRepository = new UserRepository({ db });
   const submissionRepository = new SubmissionRepository({ db });
   const submissionDraftRepository = new SubmissionDraftRepository({ db });
+  const submissionLikeRepository = new SubmissionLikeRepository({ db });
   const challengeRepository = new ChallengeRepository({ db });
   const moderationLogRepository = new ModerationLogRepository({ db });
   const participationRepository = new ParticipationRepository({ db });
@@ -73,6 +77,7 @@ export const createContainer = () => {
   const submissionService = new SubmissionService({
     db,
     submissionRepository,
+    submissionLikeRepository,
     challengeRepository,
     participationRepository,
   });
@@ -87,6 +92,12 @@ export const createContainer = () => {
     submissionDraftRepository,
     challengeRepository,
     participationRepository,
+  });
+  const submissionLikeService = new SubmissionLikeService({
+    db,
+    submissionLikeRepository,
+    submissionRepository,
+    challengeRepository,
   });
 
   const feedbackService = new FeedbackService({
@@ -142,6 +153,10 @@ export const createContainer = () => {
     submissionDraftService,
     authz: authorizationMiddleware,
   });
+  const submissionLikeController = new SubmissionLikeController({
+    submissionLikeService,
+    authz: authorizationMiddleware,
+  });
   const participationController = new ParticipationController({
     participationService,
     authz: authorizationMiddleware,
@@ -162,6 +177,7 @@ export const createContainer = () => {
     challengeController,
     submissionController,
     submissionDraftController,
+    submissionLikeController,
     moderationLogController,
     participationController,
     feedbackController,
