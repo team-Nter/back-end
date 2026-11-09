@@ -96,10 +96,16 @@ export const challengeListQuerySchema = z.object({
 
 export const adminChallengeListQuerySchema = z.object({
   status: z
-    .enum(CHALLENGE_STATUSES, {
-      error:
-        'status는 PENDING, APPROVED, REJECTED, CANCELED 중 하나여야 합니다.',
-    })
+    .string()
+    .transform((value) => value.split(',').map((item) => item.trim()))
+    .pipe(
+      z.array(
+        z.enum(CHALLENGE_STATUSES, {
+          error:
+            'status는 PENDING, APPROVED, REJECTED, CANCELED 중에서 골라야 합니다.',
+        }),
+      ),
+    )
     .optional(),
   sort: z
     .enum(ADMIN_CHALLENGE_SORTS, {
