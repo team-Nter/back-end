@@ -77,6 +77,7 @@ export const createContainer = () => {
   const submissionService = new SubmissionService({
     db,
     submissionRepository,
+    submissionLikeRepository,
     challengeRepository,
     participationRepository,
   });

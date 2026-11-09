@@ -9,36 +9,45 @@ import {
 export class SubmissionService {
   #db;
   #submissionRepository;
+  #submissionLikeRepository;
   #challengeRepository;
   #participationRepository;
 
   constructor({
     db,
     submissionRepository,
+    submissionLikeRepository,
     challengeRepository,
     participationRepository,
   }) {
     this.#db = db;
     this.#submissionRepository = submissionRepository;
+    this.#submissionLikeRepository = submissionLikeRepository;
     this.#challengeRepository = challengeRepository;
     this.#participationRepository = participationRepository;
   }
 
   // 작업물 단일 조회
-  async getSubmission(submissionId) {
+  async getSubmission(submissionId, userId) {
     const submission = await this.#submissionRepository.findById(submissionId);
 
     if (!submission) {
       throw new NotFoundException('작업물을 찾을 수 없습니다');
     }
 
+    const like =
+      await this.#submissionLikeRepository.findByUserIdAndSubmissionId(
+        userId,
+        submissionId,
+      );
+
     const { likes, feedbacks, participation, ...rest } = submission;
     const user = participation.user;
-    //isLiked는 1차 mvp 내의 내용이 아닌고로 이후 작성
 
     return {
       ...rest,
       likeCount: likes,
+      isLiked: Boolean(like),
       feedbackCount: feedbacks,
       author: user
         ? {

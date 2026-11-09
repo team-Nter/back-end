@@ -5,6 +5,17 @@ export class SubmissionLikeRepository {
     this.#db = db;
   }
 
+  findByUserIdAndSubmissionId(userId, submissionId, { tx } = {}) {
+    const db = tx ?? this.#db;
+
+    return db.orm.public.SubmissionLike.where({
+      userId: Number(userId),
+      submissionId: Number(submissionId),
+    })
+      .select('userId')
+      .first();
+  }
+
   create(userId, submissionId, { tx } = {}) {
     const db = tx ?? this.#db;
     return db.orm.public.SubmissionLike.createAll(
