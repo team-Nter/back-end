@@ -5,6 +5,8 @@ import {
 } from '#exceptions';
 import { CHALLENGE_STATUSES, ERROR_MESSAGE } from '#constants';
 
+const MAX_PAGE = 100;
+
 const MY_CHALLENGE_FILTERS = {
   requested: (userId) => ({
     requestorId: userId,
@@ -73,7 +75,7 @@ export class ChallengeService {
         page,
         pageSize,
         totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.min(Math.ceil(total / pageSize), MAX_PAGE),
       },
     };
   }
@@ -95,10 +97,13 @@ export class ChallengeService {
     return { ...challenge, ...myParticipationAndSubmission, bestSubmissions };
   }
 
-  async getMyChallenges(userId, type, { page, pageSize, keyword }) {
+  async getMyChallenges(userId, type, { page, pageSize, keyword, status }) {
     const typeFilters = MY_CHALLENGE_FILTERS[type](userId);
 
     const filters = { ...typeFilters, keyword };
+    if (type === 'requested' && status) {
+      filters.statuses = [status];
+    }
 
     const [items, { total }] = await Promise.all([
       this.#challengeRepository.findMany({ page, pageSize, ...filters }),
@@ -111,7 +116,7 @@ export class ChallengeService {
         page,
         pageSize,
         totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.min(Math.ceil(total / pageSize), MAX_PAGE),
       },
     };
   }
@@ -125,11 +130,17 @@ export class ChallengeService {
     const isPending = challenge.status === 'PENDING';
     const hasActivity =
       challenge.participations > 0 || challenge.submissions > 0;
+    const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
+
+    const moderation = hasModeration
+      ? await this.#moderationLogRepository.findLatestByChallenge(id)
+      : null;
 
     return {
       ...challenge,
       canEdit: isPending,
       canCancel: isPending && !hasActivity,
+      moderation: moderation ?? null,
     };
   }
 
@@ -171,7 +182,7 @@ export class ChallengeService {
         page,
         pageSize,
         totalCount: total,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.min(Math.ceil(total / pageSize), MAX_PAGE),
       },
     };
   }

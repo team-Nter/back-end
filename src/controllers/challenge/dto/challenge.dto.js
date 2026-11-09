@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from '../../../common/schemas/id.schema.js';
 import {
   CHALLENGE_CATEGORIES,
   DOCUMENT_TYPES,
@@ -41,24 +42,28 @@ export const createChallengeSchema = z.object({
 });
 
 export const challengeIdParamSchema = z.object({
-  challengeId: z.coerce.number().int().positive('챌린지 ID는 양수여야 합니다.'),
+  challengeId: idSchema,
 });
 
-export const updateChallengeSchema = createChallengeSchema
-  .partial()
-  .strict()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: '수정할 내용이 없습니다.',
+export const myChallengeListQuerySchema = z
+  .object({
+    type: z.enum(['requested', 'participating', 'completed'], {
+      error: 'type은 requested, participating, completed 중 하나여야 합니다.',
+    }),
+    status: z
+      .enum(CHALLENGE_STATUSES, {
+        error:
+          'status는 PENDING, APPROVED, REJECTED, CANCELED 중 하나여야 합니다.',
+      })
+      .optional(),
+    page: z.coerce.number().int().min(1).max(100).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(10),
+    keyword: z.string().trim().optional(),
+  })
+  .refine((query) => !query.status || query.type === 'requested', {
+    message: 'status 필터는 type이 requested일 때만 사용할 수 있습니다.',
+    path: ['status'],
   });
-
-export const myChallengeListQuerySchema = z.object({
-  type: z.enum(['requested', 'participating', 'completed'], {
-    error: 'type은 requested, participating, completed 중 하나여야 합니다.',
-  }),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
-  keyword: z.string().trim().optional(),
-});
 
 export const challengeListQuerySchema = z.object({
   category: z
@@ -89,7 +94,7 @@ export const challengeListQuerySchema = z.object({
         'sort는 createdAtDesc, createdAtAsc, deadlineAsc, deadlineDesc 중 하나여야 합니다.',
     })
     .default('createdAtDesc'),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(100).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
   keyword: z.string().trim().optional(),
 });
@@ -107,7 +112,7 @@ export const adminChallengeListQuerySchema = z.object({
         'sort는 createdAtDesc, createdAtAsc, deadlineAsc, deadlineDesc 중 하나여야 합니다.',
     })
     .default('createdAtDesc'),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(100).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
   keyword: z.string().trim().optional(),
 });
