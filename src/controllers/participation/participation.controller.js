@@ -36,6 +36,7 @@ export class ParticipationController extends BaseController {
     this.router.post(
       '/',
       this.#authz.requireAuth,
+      this.#authz.requireRole('USER'),
       validate('params', challengeIdParamSchema),
       (req, res) => this.joinChallenge(req, res),
     );

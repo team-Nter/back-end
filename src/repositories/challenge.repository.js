@@ -5,6 +5,8 @@ const SORT_KEYS = {
   deadlineDesc: { field: 'deadlineAt', dir: 'desc' },
 };
 
+const escapeLike = (text) => text.replace(/[\\%_]/g, '\\$&');
+
 export class ChallengeRepository {
   #db;
   // 사용할 필드 목록을 재사용
@@ -48,6 +50,17 @@ export class ChallengeRepository {
       .Challenge.where({ id: Number(id) })
       .select(...this.#fields)
       .forNoKeyUpdate()
+      .first();
+  }
+
+  findStatusAndDeadlineForShare(id, { tx } = {}) {
+    if (!tx) {
+      throw new Error('잠금 조회에는 트랜잭션이 필요합니다.');
+    }
+
+    return tx.orm.public.Challenge.where({ id: Number(id) })
+      .select('status', 'deadlineAt')
+      .forShare()
       .first();
   }
 
@@ -239,7 +252,9 @@ export class ChallengeRepository {
       query = query.where((challenge) => challenge.deadlineAt.lte(now));
     }
     if (keyword) {
-      query = query.where((challenge) => challenge.title.ilike(`%${keyword}%`));
+      query = query.where((challenge) =>
+        challenge.title.ilike(`%${escapeLike(keyword)}%`),
+      );
     }
 
     return query;
