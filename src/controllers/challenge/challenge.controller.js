@@ -4,6 +4,7 @@ import { validate } from '#middlewares';
 import {
   challengeIdParamSchema,
   createChallengeSchema,
+  updateChallengeSchema,
   challengeListQuerySchema,
   adminChallengeListQuerySchema,
   adminChallengeDetailQuerySchema,
@@ -31,6 +32,14 @@ export class ChallengeController extends BaseController {
       '/',
       validate('query', challengeListQuerySchema),
       (req, res) => this.getChallenges(req, res),
+    );
+
+    this.router.patch(
+      '/:challengeId',
+      this.#authz.requireAuth,
+      validate('params', challengeIdParamSchema),
+      validate('body', updateChallengeSchema),
+      (req, res) => this.updateMyChallenge(req, res),
     );
 
     this.router.delete(
@@ -77,6 +86,15 @@ export class ChallengeController extends BaseController {
   async getChallenges(req, res) {
     const challenges = await this.#challengeService.getChallenges(req.query);
     res.status(HTTP_STATUS.OK).json(challenges);
+  }
+
+  async updateMyChallenge(req, res) {
+    const updatedChallenge = await this.#challengeService.updateMyChallenge(
+      req.params.challengeId,
+      req.user.id,
+      req.body,
+    );
+    res.status(HTTP_STATUS.OK).json(updatedChallenge);
   }
 
   async deleteMyChallenge(req, res) {

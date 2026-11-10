@@ -143,10 +143,32 @@ export class ChallengeService {
 
     return {
       ...challenge,
-      canEdit: isPending,
+      canEdit: isPending || challenge.status === 'REJECTED',
       canCancel: isPending && !hasActivity,
       moderation: moderation ?? null,
     };
+  }
+
+  async updateMyChallenge(id, userId, data) {
+    const updated = await this.#challengeRepository.updateByRequestor(
+      id,
+      userId,
+      data,
+    );
+    if (updated) return updated;
+
+    const challenge = await this.#challengeRepository.findById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+    if (challenge.requestorId !== userId) {
+      throw new ForbiddenException(
+        '본인이 신청한 챌린지만 수정할 수 있습니다.',
+      );
+    }
+    throw new ConflictException(
+      '승인 대기 중이거나 거절된 챌린지만 수정할 수 있습니다.',
+    );
   }
 
   async deleteMyChallenge(id, userId) {

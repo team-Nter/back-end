@@ -41,6 +41,12 @@ export const createChallengeSchema = z.object({
     .max(255, '내용은 255자 이하여야합니다.'),
 });
 
+export const updateChallengeSchema = createChallengeSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: '수정할 내용을 입력해주세요.',
+  });
+
 export const challengeIdParamSchema = z.object({
   challengeId: idSchema,
 });
