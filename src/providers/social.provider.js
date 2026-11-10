@@ -46,6 +46,7 @@ export class SocialProvider {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params,
+      signal: AbortSignal.timeout(5000),
     });
 
     const data = await response.json();
@@ -82,6 +83,7 @@ export class SocialProvider {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     const data = await response.json();

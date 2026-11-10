@@ -12,6 +12,7 @@ export default [
         URL: 'readonly',
         fetch: 'readonly',
         Buffer: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     rules: {
