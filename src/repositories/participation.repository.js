@@ -81,6 +81,23 @@ export class ParticipationRepository {
       .first();
   }
 
+  // 내 챌린지 목록 : 여러 챌린지에 대한 내 참여와 제출물 id를 한 번에 조회
+  findWithSubmissionByChallengeIdsAndUserId(
+    { challengeIds, userId },
+    { tx } = {},
+  ) {
+    if (challengeIds.length === 0) return [];
+
+    return this.#orm(tx)
+      .Participation.where({ userId: Number(userId) })
+      .where((participation) =>
+        participation.challengeId.in(challengeIds.map(Number)),
+      )
+      .select('id', 'challengeId')
+      .include('submission', (submission) => submission.select('id'))
+      .all();
+  }
+
   // 행 잠금 위해 작성
   findByChallengeIdAndUserIdForUpdate({ challengeId, userId }, { tx } = {}) {
     if (!tx) {
