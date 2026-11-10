@@ -90,7 +90,7 @@ export class SocialProvider {
         error: data.error,
       });
 
-      switch (data.error) {
+      switch (data?.error) {
         case 'invalid_grant':
           throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
 
