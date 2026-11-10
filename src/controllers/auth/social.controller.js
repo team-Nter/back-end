@@ -1,4 +1,3 @@
-import { BadRequestException, UnauthorizedException } from '#exceptions';
 import { BaseController } from '../base.controller.js';
 import { ERROR_MESSAGE } from '#constants';
 import { validate } from '#middlewares';
@@ -25,11 +24,23 @@ export class SocialController extends BaseController {
       validate('query', socialLoginQuerySchema),
       (req, res) => this.googleRedirect(req, res),
     );
-    this.router.get(
-      '/google/callback',
-      validate('query', socialCallbackQuerySchema),
-      (req, res) => this.googleCallback(req, res),
-    );
+    this.router.get('/google/callback', (req, res) => {
+      const result = socialCallbackQuerySchema.safeParse(req.query);
+
+      if (!result.success) {
+        this.#cookieProvider.clearSocialCookies(res);
+        return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+      }
+
+      Object.defineProperty(req, 'query', {
+        value: result.data,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+
+      return this.googleCallback(req, res);
+    });
 
     return this.router;
   }
@@ -87,7 +98,7 @@ export class SocialController extends BaseController {
       return res.redirect(redirectUrl.toString());
     } catch (error) {
       if (error.message === ERROR_MESSAGE.EMAIL_ALREADY_EXISTS) {
-        return this.#redirectToLogin(res, 'email_already_exists');
+        return this.#redirectToLogin(res, ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
       }
 
       return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
@@ -95,6 +106,7 @@ export class SocialController extends BaseController {
   }
 
   #redirectToLogin(res, error) {
+    this.#cookieProvider.clearSocialCookies(res);
     const redirectUrl = new URL('/login', this.#clientBaseUrl);
 
     redirectUrl.searchParams.set('error', error);
