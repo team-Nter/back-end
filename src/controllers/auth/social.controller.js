@@ -71,11 +71,11 @@ export class SocialController extends BaseController {
       codeVerifier,
     });
 
-    this.#cookieProvider.clearSocialCookies(res);
-
     if (!stateResult) {
       return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
+
+    this.#cookieProvider.clearSocialCookies(res);
 
     if (error) {
       return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
