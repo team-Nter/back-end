@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'85bd0ddec5590c323456af5bbc5e4583bf0aed1b862fd7296e53cca518aa9c44'>;
+  StorageHashBase<'27dc57345b79d94ae88cbf9dd6b6e9ada36914ccfa2f37ecabef47b84bfeea22'>;
 export type ExecutionHash =
   ExecutionHashBase<'eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2'>;
 export type ProfileHash =
@@ -258,18 +258,24 @@ type FieldTypeOverrides = {
           readonly output:
             | 'CHALLENGE_PARTICIPATION'
             | 'SUBMISSION_RECEIVED'
+            | 'SUBMISSION_CHANGED'
+            | 'SUBMISSION_DELETED'
             | 'FEEDBACK_RECEIVED'
             | 'SUBMISSION_LIKED'
             | 'CHALLENGE_CANCELED'
+            | 'CHALLENGE_CLOSED'
             | 'SUBMISSION_CANCELED'
             | 'CHALLENGE_REJECTED'
             | 'CHALLENGE_APPROVED';
           readonly input:
             | 'CHALLENGE_PARTICIPATION'
             | 'SUBMISSION_RECEIVED'
+            | 'SUBMISSION_CHANGED'
+            | 'SUBMISSION_DELETED'
             | 'FEEDBACK_RECEIVED'
             | 'SUBMISSION_LIKED'
             | 'CHALLENGE_CANCELED'
+            | 'CHALLENGE_CLOSED'
             | 'SUBMISSION_CANCELED'
             | 'CHALLENGE_REJECTED'
             | 'CHALLENGE_APPROVED';
@@ -322,18 +328,24 @@ type ColumnTypeOverrides = {
         readonly output:
           | 'CHALLENGE_PARTICIPATION'
           | 'SUBMISSION_RECEIVED'
+          | 'SUBMISSION_CHANGED'
+          | 'SUBMISSION_DELETED'
           | 'FEEDBACK_RECEIVED'
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELED'
+          | 'CHALLENGE_CLOSED'
           | 'SUBMISSION_CANCELED'
           | 'CHALLENGE_REJECTED'
           | 'CHALLENGE_APPROVED';
         readonly input:
           | 'CHALLENGE_PARTICIPATION'
           | 'SUBMISSION_RECEIVED'
+          | 'SUBMISSION_CHANGED'
+          | 'SUBMISSION_DELETED'
           | 'FEEDBACK_RECEIVED'
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELED'
+          | 'CHALLENGE_CLOSED'
           | 'SUBMISSION_CANCELED'
           | 'CHALLENGE_REJECTED'
           | 'CHALLENGE_APPROVED';
@@ -1432,9 +1444,12 @@ type ContractBase = Omit<
               readonly values: readonly [
                 'CHALLENGE_PARTICIPATION',
                 'SUBMISSION_RECEIVED',
+                'SUBMISSION_CHANGED',
+                'SUBMISSION_DELETED',
                 'FEEDBACK_RECEIVED',
                 'SUBMISSION_LIKED',
                 'CHALLENGE_CANCELED',
+                'CHALLENGE_CLOSED',
                 'SUBMISSION_CANCELED',
                 'CHALLENGE_REJECTED',
                 'CHALLENGE_APPROVED',
@@ -2369,9 +2384,12 @@ type ContractBase = Omit<
                 readonly value: 'CHALLENGE_PARTICIPATION';
               },
               { readonly name: 'SUBMISSION_RECEIVED'; readonly value: 'SUBMISSION_RECEIVED' },
+              { readonly name: 'SUBMISSION_CHANGED'; readonly value: 'SUBMISSION_CHANGED' },
+              { readonly name: 'SUBMISSION_DELETED'; readonly value: 'SUBMISSION_DELETED' },
               { readonly name: 'FEEDBACK_RECEIVED'; readonly value: 'FEEDBACK_RECEIVED' },
               { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
               { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
+              { readonly name: 'CHALLENGE_CLOSED'; readonly value: 'CHALLENGE_CLOSED' },
               { readonly name: 'SUBMISSION_CANCELED'; readonly value: 'SUBMISSION_CANCELED' },
               { readonly name: 'CHALLENGE_REJECTED'; readonly value: 'CHALLENGE_REJECTED' },
               { readonly name: 'CHALLENGE_APPROVED'; readonly value: 'CHALLENGE_APPROVED' },
@@ -2412,9 +2430,12 @@ type ContractBase = Omit<
           readonly NotificationType: readonly [
             { readonly name: 'CHALLENGE_PARTICIPATION'; readonly value: 'CHALLENGE_PARTICIPATION' },
             { readonly name: 'SUBMISSION_RECEIVED'; readonly value: 'SUBMISSION_RECEIVED' },
+            { readonly name: 'SUBMISSION_CHANGED'; readonly value: 'SUBMISSION_CHANGED' },
+            { readonly name: 'SUBMISSION_DELETED'; readonly value: 'SUBMISSION_DELETED' },
             { readonly name: 'FEEDBACK_RECEIVED'; readonly value: 'FEEDBACK_RECEIVED' },
             { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
             { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
+            { readonly name: 'CHALLENGE_CLOSED'; readonly value: 'CHALLENGE_CLOSED' },
             { readonly name: 'SUBMISSION_CANCELED'; readonly value: 'SUBMISSION_CANCELED' },
             { readonly name: 'CHALLENGE_REJECTED'; readonly value: 'CHALLENGE_REJECTED' },
             { readonly name: 'CHALLENGE_APPROVED'; readonly value: 'CHALLENGE_APPROVED' },
