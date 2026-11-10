@@ -130,16 +130,18 @@ export class ParticipationService {
       await this.#participationRepository.findAllWithSubmissionByChallengeId(
         challengeId,
       );
-    const participants = participations
-      .map(({ id, joinedAt, user, submission }) => ({
-        id,
-        user: user ?? null,
-        submissionId: submission?.id ?? null,
-        likeCount: submission?.likes ?? 0,
-        submittedAt: submission?.submittedAt ?? null,
-        joinedAt,
-      }))
-      .sort((a, b) => this.#compareParticipants(a, b));
+    const participants = this.#assignRanks(
+      participations
+        .map(({ id, joinedAt, user, submission }) => ({
+          id,
+          user: user ?? null,
+          submissionId: submission?.id ?? null,
+          likeCount: submission?.likes ?? 0,
+          submittedAt: submission?.submittedAt ?? null,
+          joinedAt,
+        }))
+        .sort((a, b) => this.#compareParticipants(a, b)),
+    );
 
     const totalCount = participants.length;
     const offset = (page - 1) * pageSize;
@@ -153,6 +155,26 @@ export class ParticipationService {
         totalPages: Math.ceil(totalCount / pageSize),
       },
     };
+  }
+
+  // 공동 순위 : 좋아요가 같으면 같은 순위, 다음 순위는 그만큼 건너뜀 (1, 1, 1, 4)
+  // 미제출자는 순위 없음(null). 정렬된 목록을 받아야 해요 (제출자가 항상 앞)
+  #assignRanks(participants) {
+    let rank = null;
+    let prevLikeCount = null;
+
+    return participants.map((participant, index) => {
+      if (participant.submissionId === null) {
+        return { ...participant, rank: null };
+      }
+
+      if (participant.likeCount !== prevLikeCount) {
+        rank = index + 1;
+        prevLikeCount = participant.likeCount;
+      }
+
+      return { ...participant, rank };
+    });
   }
 
   // 참여 현황 정렬 : 제출자(좋아요 많은 순 → 먼저 제출한 순) → 미제출자(먼저 참여한 순)
