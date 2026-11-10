@@ -133,6 +133,7 @@ export class ChallengeService {
     }
 
     const isPending = challenge.status === 'PENDING';
+    const isRejected = challenge.status === 'REJECTED';
     const hasActivity =
       challenge.participations > 0 || challenge.submissions > 0;
     const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
@@ -143,8 +144,8 @@ export class ChallengeService {
 
     return {
       ...challenge,
-      canEdit: isPending || challenge.status === 'REJECTED',
-      canCancel: isPending && !hasActivity,
+      canEdit: isPending || isRejected,
+      canCancel: (isPending || isRejected) && !hasActivity,
       moderation: moderation ?? null,
     };
   }
@@ -187,8 +188,10 @@ export class ChallengeService {
         '본인이 신청한 챌린지만 취소할 수 있습니다.',
       );
     }
-    if (challenge.status !== 'PENDING') {
-      throw new ConflictException('승인 전인 챌린지만 취소할 수 있습니다.');
+    if (!['PENDING', 'REJECTED'].includes(challenge.status)) {
+      throw new ConflictException(
+        '승인 대기 중이거나 거절된 챌린지만 취소할 수 있습니다.',
+      );
     }
     throw new ConflictException(
       '참여 이력이 있는 챌린지는 취소할 수 없습니다.',

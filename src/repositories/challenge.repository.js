@@ -197,7 +197,8 @@ export class ChallengeRepository {
   //신청자 취소 (실제 삭제)
   deleteByRequestor(id, requestorId) {
     return this.#orm()
-      .Challenge.where({ id, requestorId, status: 'PENDING' })
+      .Challenge.where({ id, requestorId })
+      .where((challenge) => challenge.status.in(['PENDING', 'REJECTED']))
       .where((challenge) => challenge.participations.none())
       .where((challenge) => challenge.submissions.none())
       .delete();
