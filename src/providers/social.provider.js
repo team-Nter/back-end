@@ -51,6 +51,11 @@ export class SocialProvider {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('[Google OAuth] Token request failed', {
+        status: response.status,
+        error: data.error,
+      });
+
       switch (data.error) {
         case 'invalid_grant':
           throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);

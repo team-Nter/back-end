@@ -101,6 +101,11 @@ export class SocialController extends BaseController {
         return this.#redirectToLogin(res, ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
       }
 
+      console.error('[Google OAuth] Login failed', {
+        message: error.message,
+        name: error.name,
+      });
+
       return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
   }
