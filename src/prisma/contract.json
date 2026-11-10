@@ -112,14 +112,6 @@
                 "value": "SUBMISSION_RECEIVED"
               },
               {
-                "name": "SUBMISSION_CHANGED",
-                "value": "SUBMISSION_CHANGED"
-              },
-              {
-                "name": "SUBMISSION_DELETED",
-                "value": "SUBMISSION_DELETED"
-              },
-              {
                 "name": "FEEDBACK_RECEIVED",
                 "value": "FEEDBACK_RECEIVED"
               },
@@ -130,10 +122,6 @@
               {
                 "name": "CHALLENGE_CANCELED",
                 "value": "CHALLENGE_CANCELED"
-              },
-              {
-                "name": "CHALLENGE_CLOSED",
-                "value": "CHALLENGE_CLOSED"
               },
               {
                 "name": "SUBMISSION_CANCELED",
@@ -1891,8 +1879,8 @@
             "Notification": {
               "checks": [
                 {
-                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'SUBMISSION_CHANGED', 'SUBMISSION_DELETED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'CHALLENGE_CLOSED', 'SUBMISSION_CANCELED', 'CHALLENGE_REJECTED', 'CHALLENGE_APPROVED')",
-                  "name": "Notification_type_check_f06890ab",
+                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'SUBMISSION_CANCELED', 'CHALLENGE_REJECTED', 'CHALLENGE_APPROVED')",
+                  "name": "Notification_type_check_89db9f38",
                   "prefix": "Notification_type_check"
                 }
               ],
@@ -2689,12 +2677,9 @@
               "values": [
                 "CHALLENGE_PARTICIPATION",
                 "SUBMISSION_RECEIVED",
-                "SUBMISSION_CHANGED",
-                "SUBMISSION_DELETED",
                 "FEEDBACK_RECEIVED",
                 "SUBMISSION_LIKED",
                 "CHALLENGE_CANCELED",
-                "CHALLENGE_CLOSED",
                 "SUBMISSION_CANCELED",
                 "CHALLENGE_REJECTED",
                 "CHALLENGE_APPROVED"
@@ -2720,7 +2705,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "27dc57345b79d94ae88cbf9dd6b6e9ada36914ccfa2f37ecabef47b84bfeea22"
+    "storageHash": "85bd0ddec5590c323456af5bbc5e4583bf0aed1b862fd7296e53cca518aa9c44"
   },
   "execution": {
     "executionHash": "eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2",
