@@ -37,7 +37,7 @@ export class UserRepository {
   findByEmail(email, { includePassword = false } = {}) {
     const fields = includePassword
       ? [...this.#userFields, 'passwordHash']
-      : this.#userFields;
+      : [...this.#userFields, 'providerId'];
 
     return this.#db.orm.public.User.where({ email })
       .select(...fields)

@@ -40,18 +40,17 @@ export class SocialService {
     if (!userInfo.sub || !userInfo.email || userInfo.email_verified !== true) {
       throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
-    const existingUser = await this.#userRepository.findBySub(userInfo.sub);
+    const existingUser = await this.#userRepository.findByEmail(userInfo.email);
 
     if (existingUser) {
-      const tokens = this.#tokenProvider.generateTokens(existingUser);
-      return { user: existingUser, tokens };
-    }
+      if (
+        existingUser.provider === 'GOOGLE' &&
+        existingUser.providerId === userInfo.sub
+      ) {
+        const tokens = this.#tokenProvider.generateTokens(existingUser);
+        return { user: existingUser, tokens };
+      }
 
-    const existingEmail = await this.#userRepository.findByEmail(
-      userInfo.email,
-    );
-
-    if (existingEmail) {
       throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
     }
 
@@ -68,7 +67,11 @@ export class SocialService {
       if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
         user = await this.#userRepository.findBySub(userInfo.sub);
 
-        if (!user) {
+        if (
+          !user ||
+          user.provider !== 'GOOGLE' ||
+          user.providerId !== userInfo.sub
+        ) {
           throw new ConflictException(ERROR_MESSAGE.RESOURCE_CONFLICT);
         }
       } else {
