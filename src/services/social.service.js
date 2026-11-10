@@ -1,4 +1,4 @@
-import { DB_ERROR, ERROR_MESSAGE } from '#constants';
+import { DB_ERROR, ERROR_MESSAGE, createGuestNickname } from '#constants';
 import { ConflictException, UnauthorizedException } from '#exceptions';
 
 export class SocialService {
@@ -62,6 +62,7 @@ export class SocialService {
         email: userInfo.email,
         provider: 'GOOGLE',
         providerId: userInfo.sub,
+        nickname: createGuestNickname(),
       });
     } catch (error) {
       if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
