@@ -56,6 +56,7 @@ export class SocialService {
     }
 
     let user;
+
     try {
       user = await this.#userRepository.create({
         email: userInfo.email,
@@ -64,10 +65,14 @@ export class SocialService {
       });
     } catch (error) {
       if (error.sqlState === DB_ERROR.UNIQUE_VIOLATION) {
-        throw new ConflictException(ERROR_MESSAGE.RESOURCE_CONFLICT);
-      }
+        user = await this.#userRepository.findBySub(userInfo.sub);
 
-      throw error;
+        if (!user) {
+          throw new ConflictException(ERROR_MESSAGE.RESOURCE_CONFLICT);
+        }
+      } else {
+        throw error;
+      }
     }
 
     const tokens = this.#tokenProvider.generateTokens(user);
