@@ -40,19 +40,52 @@ export class SocialProvider {
       code_verifier: codeVerifier,
     });
 
-    const response = await fetch(TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params,
-      signal: AbortSignal.timeout(5000),
-    });
+    let response;
 
-    const data = await response.json();
+    try {
+      response = await fetch(TOKEN_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params,
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (error) {
+      if (error.name === 'TimeoutError') {
+        console.error('[Google OAuth] Token request timed out', {
+          message: error.message,
+        });
+      } else {
+        console.error('[Google OAuth] Token request failed', {
+          name: error.name,
+          message: error.message,
+        });
+      }
+
+      throw new Error(ERROR_MESSAGE.SOCIAL_AUTH_FAILED, {
+        cause: error,
+      });
+    }
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error('[Google OAuth] Token response parsing failed', {
+        status: response.status,
+        name: error.name,
+        message: error.message,
+      });
+
+      throw new Error(ERROR_MESSAGE.SOCIAL_AUTH_FAILED, {
+        cause: error,
+      });
+    }
 
     if (!response.ok) {
-      console.error('[Google OAuth] Token request failed', {
+      console.error('[Google OAuth] Token request rejected', {
         status: response.status,
         error: data.error,
       });
@@ -78,15 +111,47 @@ export class SocialProvider {
   }
 
   async getGoogleUserInfo(accessToken) {
-    const response = await fetch(USER_INFO_URL, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      signal: AbortSignal.timeout(5000),
-    });
+    let response;
+    try {
+      response = await fetch(USER_INFO_URL, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (error) {
+      if (error.name === 'TimeoutError') {
+        console.error('Google OAuth Token request timed out', {
+          message: error.message,
+        });
+      } else {
+        console.error('Google OAuth Token request failed', {
+          name: error.name,
+          message: error.message,
+        });
+      }
 
-    const data = await response.json();
+      throw new Error(ERROR_MESSAGE.SOCIAL_AUTH_FAILED, {
+        cause: error,
+      });
+    }
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error('Google OAuth Token response parsing failed', {
+        status: response.status,
+        name: error.name,
+        message: error.message,
+      });
+
+      throw new Error(ERROR_MESSAGE.SOCIAL_AUTH_FAILED, {
+        cause: error,
+      });
+    }
 
     if (!response.ok) {
       if (response.status === 401) {
