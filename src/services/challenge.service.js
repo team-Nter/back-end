@@ -105,10 +105,15 @@ export class ChallengeService {
       filters.statuses = [status];
     }
 
-    const [items, { total }] = await Promise.all([
+    const [challenges, { total }] = await Promise.all([
       this.#challengeRepository.findMany({ page, pageSize, ...filters }),
       this.#challengeRepository.count(filters),
     ]);
+
+    const items =
+      type === 'requested'
+        ? challenges
+        : await this.#attachMySubmissionIds(challenges, userId);
 
     return {
       items,
@@ -233,6 +238,29 @@ export class ChallengeService {
       myParticipation: { id: participation.id },
       mySubmissionId: participation.submission?.id ?? null,
     };
+  }
+
+  // 내 챌린지 목록(참여중·완료) : 챌린지마다 내 제출물 id를 붙임 (미제출이면 null)
+  async #attachMySubmissionIds(challenges, userId) {
+    const participations =
+      await this.#participationRepository.findWithSubmissionByChallengeIdsAndUserId(
+        {
+          challengeIds: challenges.map((challenge) => challenge.id),
+          userId,
+        },
+      );
+
+    const submissionIdByChallengeId = new Map(
+      participations.map((participation) => [
+        participation.challengeId,
+        participation.submission?.id ?? null,
+      ]),
+    );
+
+    return challenges.map((challenge) => ({
+      ...challenge,
+      mySubmissionId: submissionIdByChallengeId.get(challenge.id) ?? null,
+    }));
   }
 
   // 최다 추천 번역 : 잠금 없이 채택 여부를 먼저 확인하고, 미처리일 때만 채택 처리
