@@ -3,6 +3,7 @@ import { validate } from '#middlewares';
 import { BaseController } from '../base.controller.js';
 import { challengeIdParamSchema } from '../challenge/dto/challenge.dto.js';
 import {
+  deleteSubmissionSchema,
   submissionParamsSchema,
   submissionSchema,
   updateSubmissionSchema,
@@ -38,6 +39,7 @@ export class SubmissionController extends BaseController {
       this.#authz.requireAuth,
       this.#authz.requireRole('USER', 'ADMIN'),
       validate('params', submissionParamsSchema),
+      validate('body', deleteSubmissionSchema),
       (req, res) => this.deleteSubmission(req, res),
     );
 
@@ -54,6 +56,7 @@ export class SubmissionController extends BaseController {
       '/',
       this.#authz.requireAuth,
       validate('params', challengeIdParamSchema),
+
       validate('body', submissionSchema),
       (req, res) => this.createSubmission(req, res),
     );
@@ -117,6 +120,7 @@ export class SubmissionController extends BaseController {
       submissionId,
       req.user.id,
       req.user.role,
+      req.body?.reason,
     );
     res.status(HTTP_STATUS.NO_CONTENT).json();
   }
