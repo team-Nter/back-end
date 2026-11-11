@@ -80,6 +80,7 @@ export const createContainer = () => {
     submissionLikeRepository,
     challengeRepository,
     participationRepository,
+    notificationRepository,
   });
   const participationService = new ParticipationService({
     db,

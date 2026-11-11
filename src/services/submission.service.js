@@ -9,15 +9,17 @@ import {
 const NOTIFICATION_RULES = {
   SUBMISSION_RECEIVED: {
     type: 'SUBMISSION_RECEIVED',
-    message: (title) => `${title} 챌린지에 새 작업물이 제출되었습니다.`,
+    message: (title) => `'${title}' 챌린지에 새 작업물이 제출되었습니다.`,
   },
   SUBMISSION_CHANGED: {
     type: 'SUBMISSION_CHANGED',
-    message: (title) => `${title} 챌린지의 작업물이 변경되었습니다.`,
+    message: (title) =>
+      `관리자가 '${title}' 챌린지의 내 작업물을 수정했습니다.`,
   },
   SUBMISSION_DELETED: {
     type: 'SUBMISSION_DELETED',
-    message: (title) => `${title} 챌린지의 작업물이 삭제되었습니다.`,
+    message: (title) =>
+      `관리자가 '${title}' 챌린지의 내 작업물을 삭제했습니다.`,
   },
 };
 
@@ -194,22 +196,28 @@ export class SubmissionService {
         throw new Error('작업물 생성에 실패했습니다.');
       }
 
-      if (challenge.requestorId && challenge.requestorId !== userId) {
-        await this.#notificationRepository.createMany(
-          [
-            {
-              recipientId: challenge.requestorId,
-              type: NOTIFICATION_RULES.SUBMISSION_RECEIVED.type,
-              message: NOTIFICATION_RULES.SUBMISSION_RECEIVED.message(
-                challenge.title,
-              ),
-              challengeId: challenge.id,
-              submissionId: submission.id,
-            },
-          ],
+      // 참여자 및 챌린지 신청자(requestorId) 알람 전송
+      const participantIds =
+        await this.#participationRepository.findUserIdsByChallengeId(
+          challenge.id,
           { tx },
         );
-      }
+      const recipientIds = new Set(participantIds);
+      if (challenge.requestorId) recipientIds.add(challenge.requestorId);
+      recipientIds.delete(userId);
+
+      await this.#notificationRepository.createMany(
+        [...recipientIds].map((recipientId) => ({
+          recipientId,
+          type: NOTIFICATION_RULES.SUBMISSION_RECEIVED.type,
+          message: NOTIFICATION_RULES.SUBMISSION_RECEIVED.message(
+            challenge.title,
+          ),
+          challengeId: challenge.id,
+          submissionId: submission.id,
+        })),
+        { tx },
+      );
 
       const { participation: authorParticipation, ...rest } = submission;
       const user = authorParticipation.user;
@@ -230,7 +238,7 @@ export class SubmissionService {
   async updateSubmission(submissionId, userId, data, userRole) {
     // 검증 구간에서 트랜잭션 필요하기에 나눔.
     return this.#db.transaction(async (tx) => {
-      const challenge = await this.#validateSubmissionChange(
+      const { challenge, authorId } = await this.#validateSubmissionChange(
         submissionId,
         userId,
         userRole,
@@ -249,26 +257,29 @@ export class SubmissionService {
         throw new Error('작업물 수정에 실패했습니다.');
       }
 
-      if (!challenge.requestorId) return;
-      await this.#notificationRepository.create(
-        {
-          recipientId: challenge.requestorId,
-          type: NOTIFICATION_RULES.SUBMISSION_CHANGED.type,
-          message: NOTIFICATION_RULES.SUBMISSION_CHANGED.message(
-            challenge.title,
-          ),
-          challengeId: challenge.id,
-          submissionId: submission.id,
-        },
-        { tx },
-      );
+      // 관리자가 남의 작업물을 수정한 경우에만 작성자에게 알림
+      // 본인이 수정한 경우에는 알람을 보내지 않음.
+      if (authorId && authorId !== userId) {
+        await this.#notificationRepository.create(
+          {
+            recipientId: authorId,
+            type: NOTIFICATION_RULES.SUBMISSION_CHANGED.type,
+            message: NOTIFICATION_RULES.SUBMISSION_CHANGED.message(
+              challenge.title,
+            ),
+            challengeId: challenge.id,
+            submissionId: submission.id,
+          },
+          { tx },
+        );
+      }
       return submission;
     });
   }
 
   async deleteSubmission(submissionId, userId, userRole) {
     return this.#db.transaction(async (tx) => {
-      const challenge = await this.#validateSubmissionChange(
+      const { challenge, authorId } = await this.#validateSubmissionChange(
         submissionId,
         userId,
         userRole,
@@ -279,18 +290,20 @@ export class SubmissionService {
       );
       await this.#submissionRepository.delete(submissionId, { tx });
 
-      if (!challenge.requestorId) return;
-      await this.#notificationRepository.create(
-        {
-          recipientId: challenge.requestorId,
-          type: NOTIFICATION_RULES.SUBMISSION_DELETED.type,
-          message: NOTIFICATION_RULES.SUBMISSION_DELETED.message(
-            challenge.title,
-          ),
-          challengeId: challenge.id,
-        },
-        { tx },
-      );
+      // 관리자가 남의 작업물을 삭제한 경우에만 작성자에게 알림
+      if (authorId && authorId !== userId) {
+        await this.#notificationRepository.create(
+          {
+            recipientId: authorId,
+            type: NOTIFICATION_RULES.SUBMISSION_DELETED.type,
+            message: NOTIFICATION_RULES.SUBMISSION_DELETED.message(
+              challenge.title,
+            ),
+            challengeId: challenge.id,
+          },
+          { tx },
+        );
+      }
     });
   }
 
@@ -327,10 +340,12 @@ export class SubmissionService {
 
     // ADMIN이면 선정된 것이든, 진행 중 또는 마감되었든 수정 및 삭제가 가능해야 함.
 
-    if (userRole === 'ADMIN') return challenge;
+    // 탈퇴한 작성자면 null
+    const authorId = submission.participation?.user?.id ?? null;
 
-    const authorId = submission.participation?.user?.id;
-    if (authorId === undefined || authorId === null || authorId !== userId) {
+    if (userRole === 'ADMIN') return { challenge, authorId };
+
+    if (authorId === null || authorId !== userId) {
       throw new ForbiddenException(
         `본인이 작성한 작업물만 ${action}이 가능합니다`,
       );
@@ -350,6 +365,6 @@ export class SubmissionService {
         '선정된 작업물은 수정하거나 삭제할 수 없습니다.',
       );
     }
-    return challenge;
+    return { challenge, authorId };
   }
 }

@@ -54,6 +54,7 @@ export class SubmissionController extends BaseController {
       '/',
       this.#authz.requireAuth,
       validate('params', challengeIdParamSchema),
+
       validate('body', submissionSchema),
       (req, res) => this.createSubmission(req, res),
     );
