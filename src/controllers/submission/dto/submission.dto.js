@@ -19,4 +19,17 @@ export const updateSubmissionSchema = submissionSchema
     message: '수정할 내용이 필요합니다.',
   });
 
+// 본인 삭제는 body 없이 요청하므로 body 자체가 없어도 통과시킵니다.
+// 관리자가 남의 작업물을 삭제할 때 사유가 필요한지는 서비스에서 확인합니다.
+export const deleteSubmissionSchema = z
+  .object({
+    reason: z
+      .string()
+      .trim()
+      .min(1, '삭제 사유를 입력해주세요.')
+      .max(255, '삭제 사유는 255자 이하여야 합니다.')
+      .optional(),
+  })
+  .optional();
+
 export const submissionParamsSchema = z.object({ submissionId: idSchema });

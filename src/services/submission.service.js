@@ -18,8 +18,8 @@ const NOTIFICATION_RULES = {
   },
   SUBMISSION_DELETED: {
     type: 'SUBMISSION_DELETED',
-    message: (title) =>
-      `관리자가 '${title}' 챌린지의 내 작업물을 삭제했습니다.`,
+    message: (title, reason) =>
+      `관리자가 '${title}' 챌린지의 내 작업물을 삭제했습니다. (사유: ${reason})`,
   },
 };
 
@@ -277,7 +277,7 @@ export class SubmissionService {
     });
   }
 
-  async deleteSubmission(submissionId, userId, userRole) {
+  async deleteSubmission(submissionId, userId, userRole, reason) {
     return this.#db.transaction(async (tx) => {
       const { challenge, authorId } = await this.#validateSubmissionChange(
         submissionId,
@@ -288,16 +288,24 @@ export class SubmissionService {
           tx,
         },
       );
+
+      // 관리자가 남의 작업물을 삭제하는 경우 (작성자가 탈퇴한 경우 포함)
+      const isDeletedByAdmin = userRole === 'ADMIN' && authorId !== userId;
+      if (isDeletedByAdmin && !reason) {
+        throw new BadRequestException('삭제 사유를 입력해주세요.');
+      }
+
       await this.#submissionRepository.delete(submissionId, { tx });
 
-      // 관리자가 남의 작업물을 삭제한 경우에만 작성자에게 알림
-      if (authorId && authorId !== userId) {
+      // 작성자가 탈퇴했으면 받을 사람이 없으므로 알림 생략
+      if (isDeletedByAdmin && authorId) {
         await this.#notificationRepository.create(
           {
             recipientId: authorId,
             type: NOTIFICATION_RULES.SUBMISSION_DELETED.type,
             message: NOTIFICATION_RULES.SUBMISSION_DELETED.message(
               challenge.title,
+              reason,
             ),
             challengeId: challenge.id,
           },
