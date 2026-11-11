@@ -4,6 +4,7 @@ import { BaseController } from '../base.controller.js';
 import { submissionParamsSchema } from '../submission/dto/submission.dto.js';
 import {
   createFeedbackSchema,
+  deleteFeedbackSchema,
   feedbackParamsSchema,
 } from './dto/feedback.dto.js';
 
@@ -31,6 +32,7 @@ export class FeedbackController extends BaseController {
       this.#authz.requireAuth,
       this.#authz.requireRole('USER', 'ADMIN'),
       validate('params', feedbackParamsSchema),
+      validate('body', deleteFeedbackSchema),
       (req, res) => this.deleteFeedback(req, res),
     );
     return this.router;
@@ -38,10 +40,8 @@ export class FeedbackController extends BaseController {
 
   submissionRoutes() {
     const router = this.createRouter({ mergeParams: true });
-    router.get(
-      '/',
-      validate('params', submissionParamsSchema),
-      (req, res) => this.getFeedbacks(req, res),
+    router.get('/', validate('params', submissionParamsSchema), (req, res) =>
+      this.getFeedbacks(req, res),
     );
     router.post(
       '/',
@@ -99,6 +99,7 @@ export class FeedbackController extends BaseController {
       feedbackId,
       req.user.id,
       req.user.role,
+      req.body?.reason,
     );
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   }

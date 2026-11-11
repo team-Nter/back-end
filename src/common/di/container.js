@@ -116,6 +116,7 @@ export const createContainer = () => {
     feedbackRepository,
     submissionRepository,
     challengeRepository,
+    notificationRepository,
   });
 
   const moderationLogService = new ModerationLogService({
