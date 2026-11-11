@@ -28,7 +28,6 @@ export class SocialController extends BaseController {
       const result = socialCallbackQuerySchema.safeParse(req.query);
 
       if (!result.success) {
-        this.#cookieProvider.clearSocialCookies(res);
         return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
       }
 
@@ -75,6 +74,7 @@ export class SocialController extends BaseController {
       return this.#redirectToLogin(res, ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
     }
 
+    // state 검증 성공 후 쿠키 삭제
     this.#cookieProvider.clearSocialCookies(res);
 
     if (error) {
@@ -111,7 +111,6 @@ export class SocialController extends BaseController {
   }
 
   #redirectToLogin(res, error) {
-    this.#cookieProvider.clearSocialCookies(res);
     const redirectUrl = new URL('/login', this.#clientBaseUrl);
 
     redirectUrl.searchParams.set('error', error);
