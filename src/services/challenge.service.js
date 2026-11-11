@@ -133,6 +133,7 @@ export class ChallengeService {
     }
 
     const isPending = challenge.status === 'PENDING';
+    const isRejected = challenge.status === 'REJECTED';
     const hasActivity =
       challenge.participations > 0 || challenge.submissions > 0;
     const hasModeration = ['REJECTED', 'CANCELED'].includes(challenge.status);
@@ -143,10 +144,32 @@ export class ChallengeService {
 
     return {
       ...challenge,
-      canEdit: isPending,
-      canCancel: isPending && !hasActivity,
+      canEdit: isPending || isRejected,
+      canCancel: (isPending || isRejected) && !hasActivity,
       moderation: moderation ?? null,
     };
+  }
+
+  async updateMyChallenge(id, userId, data) {
+    const updated = await this.#challengeRepository.updateByRequestor(
+      id,
+      userId,
+      data,
+    );
+    if (updated) return updated;
+
+    const challenge = await this.#challengeRepository.findById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+    if (challenge.requestorId !== userId) {
+      throw new ForbiddenException(
+        '본인이 신청한 챌린지만 수정할 수 있습니다.',
+      );
+    }
+    throw new ConflictException(
+      '승인 대기 중이거나 거절된 챌린지만 수정할 수 있습니다.',
+    );
   }
 
   async deleteMyChallenge(id, userId) {
@@ -165,8 +188,10 @@ export class ChallengeService {
         '본인이 신청한 챌린지만 취소할 수 있습니다.',
       );
     }
-    if (challenge.status !== 'PENDING') {
-      throw new ConflictException('승인 전인 챌린지만 취소할 수 있습니다.');
+    if (!['PENDING', 'REJECTED'].includes(challenge.status)) {
+      throw new ConflictException(
+        '승인 대기 중이거나 거절된 챌린지만 취소할 수 있습니다.',
+      );
     }
     throw new ConflictException(
       '참여 이력이 있는 챌린지는 취소할 수 없습니다.',

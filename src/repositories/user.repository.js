@@ -37,7 +37,7 @@ export class UserRepository {
   findByEmail(email, { includePassword = false } = {}) {
     const fields = includePassword
       ? [...this.#userFields, 'passwordHash']
-      : this.#userFields;
+      : [...this.#userFields, 'providerId'];
 
     return this.#db.orm.public.User.where({ email })
       .select(...fields)
@@ -46,5 +46,14 @@ export class UserRepository {
 
   create(data) {
     return this.#db.orm.public.User.select(...this.#userFields).create(data);
+  }
+
+  findBySub(sub) {
+    return this.#db.orm.public.User.where({
+      providerId: sub,
+      provider: 'GOOGLE',
+    })
+      .select(...this.#userFields, 'providerId')
+      .first();
   }
 }

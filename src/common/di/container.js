@@ -22,6 +22,7 @@ import {
   ParticipationService,
   FeedbackService,
   NotificationService,
+  SocialService,
 } from '#services';
 import {
   AuthController,
@@ -33,9 +34,16 @@ import {
   ModerationLogController,
   ParticipationController,
   FeedbackController,
+  SocialController,
   Controller,
 } from '#controllers';
-import { PasswordProvider, TokenProvider, CookieProvider } from '#providers';
+import {
+  PasswordProvider,
+  TokenProvider,
+  CookieProvider,
+  SocialProvider,
+  OAuthStateProvider,
+} from '#providers';
 import { AuthMiddleware, AuthorizationMiddleware } from '#middlewares';
 
 export const createContainer = () => {
@@ -54,6 +62,8 @@ export const createContainer = () => {
   const passwordProvider = new PasswordProvider();
   const tokenProvider = new TokenProvider({ config });
   const cookieProvider = new CookieProvider({ config });
+  const socialProvider = new SocialProvider({ config });
+  const oauthStateProvider = new OAuthStateProvider({ config });
 
   // Services
   const authService = new AuthService({
@@ -120,6 +130,13 @@ export const createContainer = () => {
     notificationRepository,
   });
 
+  const socialService = new SocialService({
+    userRepository,
+    socialProvider,
+    tokenProvider,
+    oauthStateProvider,
+  });
+
   // Middlewares
 
   const authMiddleware = new AuthMiddleware({
@@ -172,6 +189,12 @@ export const createContainer = () => {
     authz: authorizationMiddleware,
   });
 
+  const socialController = new SocialController({
+    socialService,
+    cookieProvider,
+    config,
+  });
+
   const controller = new Controller({
     authController,
     userController,
@@ -182,6 +205,7 @@ export const createContainer = () => {
     moderationLogController,
     participationController,
     feedbackController,
+    socialController,
   });
 
   return { controller, db, authMiddleware };

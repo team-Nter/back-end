@@ -8,3 +8,4 @@ export * from './moderation-log.service.js';
 export * from './participation.service.js';
 export * from './feedback.service.js';
 export * from './notification.service.js';
+export * from './social.service.js';
