@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'27dc57345b79d94ae88cbf9dd6b6e9ada36914ccfa2f37ecabef47b84bfeea22'>;
+  StorageHashBase<'b99ef3919ef0f6f75b64f4af306294d8fcb7c3f55777bbc8eba97f14cf4cd58c'>;
 export type ExecutionHash =
   ExecutionHashBase<'eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2'>;
 export type ProfileHash =
@@ -261,6 +261,8 @@ type FieldTypeOverrides = {
             | 'SUBMISSION_CHANGED'
             | 'SUBMISSION_DELETED'
             | 'FEEDBACK_RECEIVED'
+            | 'FEEDBACK_CHANGED'
+            | 'FEEDBACK_DELETED'
             | 'SUBMISSION_LIKED'
             | 'CHALLENGE_CANCELED'
             | 'CHALLENGE_CLOSED'
@@ -273,6 +275,8 @@ type FieldTypeOverrides = {
             | 'SUBMISSION_CHANGED'
             | 'SUBMISSION_DELETED'
             | 'FEEDBACK_RECEIVED'
+            | 'FEEDBACK_CHANGED'
+            | 'FEEDBACK_DELETED'
             | 'SUBMISSION_LIKED'
             | 'CHALLENGE_CANCELED'
             | 'CHALLENGE_CLOSED'
@@ -331,6 +335,8 @@ type ColumnTypeOverrides = {
           | 'SUBMISSION_CHANGED'
           | 'SUBMISSION_DELETED'
           | 'FEEDBACK_RECEIVED'
+          | 'FEEDBACK_CHANGED'
+          | 'FEEDBACK_DELETED'
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELED'
           | 'CHALLENGE_CLOSED'
@@ -343,6 +349,8 @@ type ColumnTypeOverrides = {
           | 'SUBMISSION_CHANGED'
           | 'SUBMISSION_DELETED'
           | 'FEEDBACK_RECEIVED'
+          | 'FEEDBACK_CHANGED'
+          | 'FEEDBACK_DELETED'
           | 'SUBMISSION_LIKED'
           | 'CHALLENGE_CANCELED'
           | 'CHALLENGE_CLOSED'
@@ -1447,6 +1455,8 @@ type ContractBase = Omit<
                 'SUBMISSION_CHANGED',
                 'SUBMISSION_DELETED',
                 'FEEDBACK_RECEIVED',
+                'FEEDBACK_CHANGED',
+                'FEEDBACK_DELETED',
                 'SUBMISSION_LIKED',
                 'CHALLENGE_CANCELED',
                 'CHALLENGE_CLOSED',
@@ -2387,6 +2397,8 @@ type ContractBase = Omit<
               { readonly name: 'SUBMISSION_CHANGED'; readonly value: 'SUBMISSION_CHANGED' },
               { readonly name: 'SUBMISSION_DELETED'; readonly value: 'SUBMISSION_DELETED' },
               { readonly name: 'FEEDBACK_RECEIVED'; readonly value: 'FEEDBACK_RECEIVED' },
+              { readonly name: 'FEEDBACK_CHANGED'; readonly value: 'FEEDBACK_CHANGED' },
+              { readonly name: 'FEEDBACK_DELETED'; readonly value: 'FEEDBACK_DELETED' },
               { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
               { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
               { readonly name: 'CHALLENGE_CLOSED'; readonly value: 'CHALLENGE_CLOSED' },
@@ -2433,6 +2445,8 @@ type ContractBase = Omit<
             { readonly name: 'SUBMISSION_CHANGED'; readonly value: 'SUBMISSION_CHANGED' },
             { readonly name: 'SUBMISSION_DELETED'; readonly value: 'SUBMISSION_DELETED' },
             { readonly name: 'FEEDBACK_RECEIVED'; readonly value: 'FEEDBACK_RECEIVED' },
+            { readonly name: 'FEEDBACK_CHANGED'; readonly value: 'FEEDBACK_CHANGED' },
+            { readonly name: 'FEEDBACK_DELETED'; readonly value: 'FEEDBACK_DELETED' },
             { readonly name: 'SUBMISSION_LIKED'; readonly value: 'SUBMISSION_LIKED' },
             { readonly name: 'CHALLENGE_CANCELED'; readonly value: 'CHALLENGE_CANCELED' },
             { readonly name: 'CHALLENGE_CLOSED'; readonly value: 'CHALLENGE_CLOSED' },

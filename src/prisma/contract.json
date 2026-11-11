@@ -124,6 +124,14 @@
                 "value": "FEEDBACK_RECEIVED"
               },
               {
+                "name": "FEEDBACK_CHANGED",
+                "value": "FEEDBACK_CHANGED"
+              },
+              {
+                "name": "FEEDBACK_DELETED",
+                "value": "FEEDBACK_DELETED"
+              },
+              {
                 "name": "SUBMISSION_LIKED",
                 "value": "SUBMISSION_LIKED"
               },
@@ -1891,8 +1899,8 @@
             "Notification": {
               "checks": [
                 {
-                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'SUBMISSION_CHANGED', 'SUBMISSION_DELETED', 'FEEDBACK_RECEIVED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'CHALLENGE_CLOSED', 'SUBMISSION_CANCELED', 'CHALLENGE_REJECTED', 'CHALLENGE_APPROVED')",
-                  "name": "Notification_type_check_f06890ab",
+                  "expression": "\"type\" IN ('CHALLENGE_PARTICIPATION', 'SUBMISSION_RECEIVED', 'SUBMISSION_CHANGED', 'SUBMISSION_DELETED', 'FEEDBACK_RECEIVED', 'FEEDBACK_CHANGED', 'FEEDBACK_DELETED', 'SUBMISSION_LIKED', 'CHALLENGE_CANCELED', 'CHALLENGE_CLOSED', 'SUBMISSION_CANCELED', 'CHALLENGE_REJECTED', 'CHALLENGE_APPROVED')",
+                  "name": "Notification_type_check_467aa9c2",
                   "prefix": "Notification_type_check"
                 }
               ],
@@ -2692,6 +2700,8 @@
                 "SUBMISSION_CHANGED",
                 "SUBMISSION_DELETED",
                 "FEEDBACK_RECEIVED",
+                "FEEDBACK_CHANGED",
+                "FEEDBACK_DELETED",
                 "SUBMISSION_LIKED",
                 "CHALLENGE_CANCELED",
                 "CHALLENGE_CLOSED",
@@ -2720,7 +2730,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "27dc57345b79d94ae88cbf9dd6b6e9ada36914ccfa2f37ecabef47b84bfeea22"
+    "storageHash": "b99ef3919ef0f6f75b64f4af306294d8fcb7c3f55777bbc8eba97f14cf4cd58c"
   },
   "execution": {
     "executionHash": "eb0494da5a3b08c3f0b3ba26226841cc74f34acd8ab1a03402e599953836a2c2",
