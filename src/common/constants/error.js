@@ -28,6 +28,8 @@ export const ERROR_MESSAGE = {
   SOCIAL_AUTH_FAILED: '소셜 로그인에 실패했습니다.',
   FORBIDDEN: '접근 권한이 없습니다.',
   UNAUTHORIZED: '인증이 필요합니다.',
+  SOCIAL_CONFIG_ERROR: 'Google OAuth client 설정이 올바르지 않습니다.',
+  SOCIAL_REQUEST_FAILED: 'Google Token 요청 구성이 올바르지 않습니다.',
 
   // Validation
   INVALID_INPUT: '입력값이 올바르지 않습니다.',
