@@ -14,7 +14,7 @@ export class SocialProvider {
   constructor({ config }) {
     this.#googleClientId = config.GOOGLE_CLIENT_ID;
     this.#googleClientSecret = config.GOOGLE_CLIENT_SECRET;
-    this.#googleRedirectUrl = `${config.API_BASE_URL.replace(/\/+$/, '')}/auth/google/callback`;
+    this.#googleRedirectUrl = `${config.OAUTH_REDIRECT_BASE_URL.replace(/\/+$/, '')}/auth/google/callback`;
   }
 
   createGoogleUrl({ state, codeChallenge }) {
