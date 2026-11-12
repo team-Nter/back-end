@@ -1,16 +1,20 @@
 // Swagger 입력칸에 미리 채워지는 요청 예시 값입니다.
 // 응답 예시는 schemas/ 폴더의 각 필드에 붙어 있습니다.
 
-// 현재 시점보다 항상 이후로 잡아 오류 발생 막기
-const deadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-deadline.setUTCHours(14, 59, 59, 0);
+const getDeadline = () => {
+  const deadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  deadline.setUTCHours(14, 59, 59, 0);
+  return deadline.toISOString();
+};
 
 const challenge = {
   title: 'Next.js App Router 공식 문서 번역',
   sourceUrl: 'https://nextjs.org/docs/app',
   category: 'NEXTJS',
   documentType: 'OFFICIAL_DOCUMENT',
-  deadlineAt: deadline.toISOString(),
+  get deadlineAt() {
+    return getDeadline();
+  },
   maxParticipants: 10,
   description: 'App Router 라우팅 문서를 함께 번역해요.',
 };

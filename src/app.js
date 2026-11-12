@@ -2,7 +2,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler, cors, originGuard } from '#middlewares';
-import { openApiDocument } from './docs/openapi.js';
+import { createOpenApiDocument } from './docs/openapi.js';
 
 export class App {
   #config;
@@ -29,12 +29,14 @@ export class App {
 
   routes(controller) {
     this.app.get('/docs/openapi.json', (_req, res) =>
-      res.json(openApiDocument),
+      res.json(createOpenApiDocument()),
     );
     this.app.use(
       '/docs',
       swaggerUi.serve,
-      swaggerUi.setup(openApiDocument, {
+      // 문서를 HTML에 고정해 넣지 않고, 열 때마다 openapi.json을 새로 받아오는 구조
+      swaggerUi.setup(null, {
+        swaggerOptions: { url: '/docs/openapi.json' },
         customSiteTitle: '독스루 API 문서',
         // 쿠키 인증은 Authorize 버튼으로 설정할 수 없어 숨깁니다.
         // 자물쇠 아이콘은 "로그인 필요" 표시로만 남기고 클릭은 막습니다.
