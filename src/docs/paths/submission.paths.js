@@ -61,20 +61,12 @@ export const submissionPaths = {
     get: {
       tags,
       summary: '작업물 상세 조회',
-<<<<<<< Updated upstream
-      security: AUTH,
-      requestParams: { path: submissionParamsSchema },
-      responses: {
-        200: json('조회 성공', submissionDetailSchema),
-        ...errors(400, 401, { 404: '작업물을 찾을 수 없습니다.' }),
-=======
       description:
         '로그인하지 않아도 조회할 수 있습니다. 비로그인이면 isLiked는 항상 false입니다.',
       requestParams: { path: submissionParamsSchema },
       responses: {
         200: json('조회 성공', submissionDetailSchema),
         ...errors(400, { 404: '작업물을 찾을 수 없습니다.' }),
->>>>>>> Stashed changes
       },
     },
     patch: {

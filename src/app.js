@@ -1,7 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
-import { errorHandler, cors } from '#middlewares';
+import { errorHandler, cors, originGuard } from '#middlewares';
 import { openApiDocument } from './docs/openapi.js';
 
 export class App {
@@ -20,6 +20,8 @@ export class App {
     this.app.use(express.urlencoded({ extended: false }));
     this.app.use(cookieParser());
     this.app.use(cors);
+    // 폼 본문(urlencoded)은 Swagger 입력칸 때문에 유지하고, 출처 검사로 CSRF를 막습니다.
+    this.app.use(originGuard);
     this.app.use((req, res, next) =>
       authMiddleware.identifyUser(req, res, next),
     );
