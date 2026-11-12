@@ -60,7 +60,9 @@ export class App {
         console.log(
           `[${this.#config.NODE_ENV}] Server running at http://localhost:${port}`,
         );
-        console.log(`API 문서 : http://localhost:${port}/docs`);
+        // 배포 환경에서는 공개 주소(API_BASE_URL), 로컬에서는 localhost로 표시됩니다.
+        const baseUrl = this.#config.API_BASE_URL.replace(/\/+$/, '');
+        console.log(`API 문서 : ${baseUrl}/docs`);
         resolve(server);
       });
     });
