@@ -27,6 +27,7 @@ export const ERROR_MESSAGE = {
     '이 소셜 계정을 연결하려면 먼저 기존 계정으로 로그인해야 합니다.',
   SOCIAL_AUTH_FAILED: '소셜 로그인에 실패했습니다.',
   FORBIDDEN: '접근 권한이 없습니다.',
+  UNTRUSTED_ORIGIN: '허용되지 않은 출처의 요청입니다.',
   UNAUTHORIZED: '인증이 필요합니다.',
   SOCIAL_CONFIG_ERROR: 'Google OAuth client 설정이 올바르지 않습니다.',
   SOCIAL_REQUEST_FAILED: 'Google Token 요청 구성이 올바르지 않습니다.',

@@ -55,3 +55,19 @@ export const isTest = config.NODE_ENV === 'test';
 export const corsOrigins = config.CORS_ORIGINS.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+// 상태 변경 요청(POST/PUT/PATCH/DELETE)을 받아도 되는 출처입니다.
+// 프론트엔드(CORS_ORIGINS)와 같은 서버에서 열리는 Swagger 문서(API_BASE_URL)를 포함합니다.
+const toOrigin = (url) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+};
+
+export const trustedOrigins = [
+  ...new Set(
+    [...corsOrigins, config.API_BASE_URL].map(toOrigin).filter(Boolean),
+  ),
+];
