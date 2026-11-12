@@ -5,22 +5,43 @@ import {
   NotFoundException,
 } from '#exceptions';
 
+const NOTIFICATION_RULES = {
+  FEEDBACK_RECEIVED: {
+    type: 'FEEDBACK_RECEIVED',
+    message: (title) =>
+      `'${title}' 챌린지의 내 작업물에 새 피드백이 등록되었습니다.`,
+  },
+  FEEDBACK_CHANGED: {
+    type: 'FEEDBACK_CHANGED',
+    message: (title) =>
+      `관리자가 '${title}' 챌린지에 남긴 내 피드백을 수정했습니다.`,
+  },
+  FEEDBACK_DELETED: {
+    type: 'FEEDBACK_DELETED',
+    message: (title, reason) =>
+      `관리자가 '${title}' 챌린지에 남긴 내 피드백을 삭제했습니다. (사유: ${reason})`,
+  },
+};
+
 export class FeedbackService {
   #db;
   #feedbackRepository;
   #submissionRepository;
   #challengeRepository;
+  #notificationRepository;
 
   constructor({
     db,
     feedbackRepository,
     submissionRepository,
     challengeRepository,
+    notificationRepository,
   }) {
     this.#db = db;
     this.#feedbackRepository = feedbackRepository;
     this.#submissionRepository = submissionRepository;
     this.#challengeRepository = challengeRepository;
+    this.#notificationRepository = notificationRepository;
   }
 
   async getFeedbacks(submissionId, page = 1, pageSize = 10) {
@@ -83,11 +104,10 @@ export class FeedbackService {
         throw new NotFoundException('챌린지를 찾을 수 없습니다');
       }
 
-      const submission =
-        await this.#submissionRepository.findReferenceByIdForUpdate(
-          submissionId,
-          { tx },
-        );
+      const submission = await this.#submissionRepository.findByIdForUpdate(
+        submissionId,
+        { tx },
+      );
       if (!submission) {
         throw new NotFoundException('제출물을 찾을 수 없습니다');
       }
@@ -104,7 +124,7 @@ export class FeedbackService {
         );
       }
 
-      return await this.#feedbackRepository.create(
+      const feedback = await this.#feedbackRepository.create(
         submissionId,
         authorId,
         content,
@@ -112,24 +132,104 @@ export class FeedbackService {
           tx,
         },
       );
+
+      // 작업물 작성자에게 알림. (본인 작업물에 단 피드백이거나 작성자가 탈퇴한 경우 생략)
+      const submissionAuthorId = submission.participation?.user?.id ?? null;
+      if (submissionAuthorId && submissionAuthorId !== authorId) {
+        await this.#notificationRepository.create(
+          {
+            recipientId: submissionAuthorId,
+            type: NOTIFICATION_RULES.FEEDBACK_RECEIVED.type,
+            message: NOTIFICATION_RULES.FEEDBACK_RECEIVED.message(
+              challenge.title,
+            ),
+            challengeId: challenge.id,
+            submissionId: submission.id,
+            feedbackId: feedback.id,
+          },
+          { tx },
+        );
+      }
+
+      return feedback;
     });
   }
 
   async updateFeedback(feedbackId, userId, userRole, content) {
     return this.#db.transaction(async (tx) => {
-      await this.#validateFeedbackChange(feedbackId, userId, userRole, '수정', {
-        tx,
-      });
-      return await this.#feedbackRepository.update(feedbackId, content, { tx });
+      const { challenge, feedback } = await this.#validateFeedbackChange(
+        feedbackId,
+        userId,
+        userRole,
+        '수정',
+        { tx },
+      );
+      const updated = await this.#feedbackRepository.update(
+        feedbackId,
+        content,
+        { tx },
+      );
+
+      // 관리자가 남의 피드백을 수정한 경우에만 작성자에게 알림
+      if (feedback.authorId && feedback.authorId !== userId) {
+        await this.#notificationRepository.create(
+          {
+            recipientId: feedback.authorId,
+            type: NOTIFICATION_RULES.FEEDBACK_CHANGED.type,
+            message: NOTIFICATION_RULES.FEEDBACK_CHANGED.message(
+              challenge.title,
+            ),
+            challengeId: challenge.id,
+            submissionId: feedback.submissionId,
+            feedbackId: feedback.id,
+          },
+          { tx },
+        );
+      }
+
+      return updated;
     });
   }
 
-  async deleteFeedback(feedbackId, userId, userRole) {
+  async deleteFeedback(feedbackId, userId, userRole, reason) {
     return this.#db.transaction(async (tx) => {
-      await this.#validateFeedbackChange(feedbackId, userId, userRole, '삭제', {
+      const { challenge, feedback } = await this.#validateFeedbackChange(
+        feedbackId,
+        userId,
+        userRole,
+        '삭제',
+        { tx },
+      );
+
+      // 관리자가 남의 피드백을 삭제하는 경우 (작성자가 탈퇴한 경우 포함)
+      const isDeletedByAdmin =
+        userRole === 'ADMIN' && feedback.authorId !== userId;
+      if (isDeletedByAdmin && !reason) {
+        throw new BadRequestException('삭제 사유를 입력해주세요.');
+      }
+
+      const deleted = await this.#feedbackRepository.delete(feedbackId, {
         tx,
       });
-      return await this.#feedbackRepository.delete(feedbackId, { tx });
+
+      // 작성자가 탈퇴했으면 받을 사람이 없으므로 알림 생략
+      if (isDeletedByAdmin && feedback.authorId) {
+        await this.#notificationRepository.create(
+          {
+            recipientId: feedback.authorId,
+            type: NOTIFICATION_RULES.FEEDBACK_DELETED.type,
+            message: NOTIFICATION_RULES.FEEDBACK_DELETED.message(
+              challenge.title,
+              reason,
+            ),
+            challengeId: challenge.id,
+            submissionId: feedback.submissionId,
+          },
+          { tx },
+        );
+      }
+
+      return deleted;
     });
   }
 
@@ -190,5 +290,7 @@ export class FeedbackService {
         `승인된 챌린지의 피드백만 ${action}할 수 있습니다.`,
       );
     }
+
+    return { challenge, feedback };
   }
 }
