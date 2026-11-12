@@ -3,11 +3,39 @@ import postgres from '@prisma/orm-postgres/runtime';
 import bcrypt from 'bcrypt';
 import contractJson from '../src/prisma/contract.json' with { type: 'json' };
 import { fileURLToPath } from 'node:url';
-import { CHALLENGE_CATEGORIES, DOCUMENT_TYPES } from '#constants';
+import {
+  NICKNAMES,
+  CHALLENGE_SOURCES,
+  buildFeedback,
+  REJECT_REASONS,
+  CANCEL_REASONS,
+  NOTIFICATION_MESSAGES,
+  buildSubmissionContent,
+  toSubmissionTitle,
+} from './seed-data.js';
+
+// 무작위 값(날짜 · 인원 · 상태 등)을 매번 같게 만들어 시연 데이터를 고정해요
+faker.seed(99);
 
 const BCRYPT_SALT_ROUNDS = 10;
 
-const CHALLENGES_PER_USER = 20;
+// 유저 20명 × 6개 = 120개 (seed-data.js의 CHALLENGE_SOURCES 개수와 같아야 해요)
+const USER_COUNT = 20;
+const CHALLENGES_PER_USER = 6;
+
+// 마감된 챌린지 작업물은 최다 추천으로 보여지니까 길게(100줄 이상) 만들어요
+const CLOSED_SUBMISSION_MIN_LINES = 100;
+
+// 좋아요는 "유저 1명당 1개"라서, 좋아요만 누르는 독자 계정을 따로 만들어요
+// (좋아요 최대 개수 = 독자 수)
+const READER_COUNT = 300;
+const MAX_LIKES = 300;
+
+// 작업물 하나에 달리는 피드백 최대 개수
+const MAX_FEEDBACKS = 15;
+
+// 한 번에 너무 많은 줄을 넣지 않도록 나눠서 넣어요 (좋아요가 수만 개라서)
+const INSERT_CHUNK_SIZE = 5000;
 
 const ACTION_BY_STATUS = {
   APPROVED: 'APPROVE',
@@ -26,6 +54,8 @@ export class Seeder {
   #db;
   #numUsersToCreate;
   #hashedPassword;
+  #sourceByChallengeId = new Map();
+  #challengeById = new Map();
 
   constructor(db, numUsersToCreate = 5) {
     this.#db = db;
@@ -41,12 +71,21 @@ export class Seeder {
     return await this.#db.orm.public[model].select(...fields).createAll(data);
   }
 
+  async #insertInChunks(model, data, fields = ['id']) {
+    const inserted = [];
+    for (let i = 0; i < data.length; i += INSERT_CHUNK_SIZE) {
+      const chunk = data.slice(i, i + INSERT_CHUNK_SIZE);
+      inserted.push(...(await this.#insert(model, chunk, fields)));
+    }
+    return inserted;
+  }
+
   #makeUserInput(index) {
     const isAdmin = index === 1;
 
     return {
       email: isAdmin ? 'admin@example.com' : `user${index}@example.com`,
-      nickname: `${faker.person.firstName()}_${index}`,
+      nickname: NICKNAMES[index - 1],
       passwordHash: this.#hashedPassword,
       role: isAdmin ? 'ADMIN' : 'USER',
     };
@@ -60,14 +99,26 @@ export class Seeder {
     return await this.#insert('User', data, ['id', 'role']);
   }
 
-  #makeChallengeInput(requestorId) {
+  // 좋아요만 누르는 독자 계정 (챌린지 신청 · 참여 · 피드백에는 쓰지 않아요)
+  async #seedReaders() {
+    const data = this.#range(READER_COUNT).map((index) => ({
+      email: `reader${index}@example.com`,
+      nickname: `독자${index}`,
+      passwordHash: this.#hashedPassword,
+      role: 'USER',
+    }));
+
+    return await this.#insert('User', data, ['id']);
+  }
+
+  #makeChallengeInput(requestorId, source) {
     return {
       requestorId,
-      title: faker.lorem.sentence(5),
-      sourceUrl: faker.internet.url(),
-      description: faker.lorem.paragraph(5),
-      category: faker.helpers.arrayElement(CHALLENGE_CATEGORIES),
-      documentType: faker.helpers.arrayElement(DOCUMENT_TYPES),
+      title: source.title,
+      sourceUrl: source.sourceUrl,
+      description: source.description,
+      category: source.category,
+      documentType: source.documentType,
       deadlineAt: (faker.datatype.boolean({ probability: 0.7 })
         ? faker.date.future()
         : faker.date.past()
@@ -83,19 +134,34 @@ export class Seeder {
   }
 
   async #seedChallenges(users) {
-    const data = users.flatMap((user) =>
-      this.#range(CHALLENGES_PER_USER).map(() =>
-        this.#makeChallengeInput(user.id),
+    // 원문 목록을 섞은 뒤 하나씩 배정해요 (분야 · 문서 타입이 고르게 섞이고 제목은 겹치지 않음)
+    const sources = faker.helpers.shuffle([...CHALLENGE_SOURCES]);
+    const data = users.flatMap((user, userIndex) =>
+      this.#range(CHALLENGES_PER_USER).map((n) =>
+        this.#makeChallengeInput(
+          user.id,
+          sources[userIndex * CHALLENGES_PER_USER + (n - 1)],
+        ),
       ),
     );
 
-    return await this.#insert('Challenge', data, [
+    const challenges = await this.#insert('Challenge', data, [
       'id',
       'requestorId',
+      'title',
       'status',
       'maxParticipants',
       'deadlineAt',
     ]);
+
+    // 작업물 · 임시저장에서 그 챌린지의 번역문을 찾을 수 있게 저장 (제목은 모두 달라요)
+    for (const challenge of challenges) {
+      const source = CHALLENGE_SOURCES.find((s) => s.title === challenge.title);
+      this.#sourceByChallengeId.set(challenge.id, source);
+      this.#challengeById.set(challenge.id, challenge);
+    }
+
+    return challenges;
   }
 
   #makeParticipationInput(challengeId, userId) {
@@ -127,22 +193,38 @@ export class Seeder {
     ]);
   }
 
+  #isClosed(challengeId) {
+    const { deadlineAt } = this.#challengeById.get(challengeId);
+    return new Date(deadlineAt) <= new Date();
+  }
+
   #makeSubmissionInput(participation) {
+    const source = this.#sourceByChallengeId.get(participation.challengeId);
+    const isClosed = this.#isClosed(participation.challengeId);
+
     return {
       participationId: participation.id,
       challengeId: participation.challengeId,
-      title: faker.lorem.sentence(5),
-      content: faker.lorem.paragraph(8),
+      title: toSubmissionTitle(source.title),
+      // 작업물마다 문장 조합이 달라서 내용이 모두 달라요
+      content: buildSubmissionContent(source, {
+        sections: isClosed ? 10 : faker.number.int({ min: 3, max: 5 }),
+        minLines: isClosed ? CLOSED_SUBMISSION_MIN_LINES : 0,
+        faker,
+      }),
       isSelected: false,
       submittedAt: new Date().toISOString(),
     };
   }
 
   #makeSubmissionDraftInput(participation) {
+    const source = this.#sourceByChallengeId.get(participation.challengeId);
+
     return {
       participationId: participation.id,
-      title: faker.lorem.sentence(5),
-      content: faker.lorem.paragraph(8),
+      title: toSubmissionTitle(source.title),
+      // 임시저장은 작성 중인 느낌으로 짧게
+      content: buildSubmissionContent(source, { sections: 1, faker }),
     };
   }
 
@@ -166,14 +248,50 @@ export class Seeder {
     return { userId, submissionId };
   }
 
-  async #seedSubmissionLikes(users, submissions) {
-    const data = submissions.flatMap((submission) =>
-      faker.helpers
-        .arrayElements(users, { min: 0, max: Math.min(3, users.length) })
-        .map((user) => this.#makeSubmissionLikeInput(user.id, submission.id)),
+  // 작업물 하나의 좋아요 개수 (0~300)
+  // - 대부분은 적고 일부만 많도록 치우치게 뽑아요 (실제 서비스처럼)
+  // - 마감된 챌린지는 오래 공개됐으니 조금 더 많게
+  #pickLikeCount(challengeId) {
+    const curve = this.#isClosed(challengeId) ? 1.8 : 3;
+    // Math.random 대신 faker를 써야 faker.seed로 결과가 고정돼요
+    return Math.round(
+      MAX_LIKES * faker.number.float({ min: 0, max: 1 }) ** curve,
+    );
+  }
+
+  async #seedSubmissionLikes(readers, submissions) {
+    const likeCountBySubmissionId = new Map(
+      submissions.map((s) => [s.id, this.#pickLikeCount(s.challengeId)]),
     );
 
-    return await this.#insert('SubmissionLike', data, [
+    // 마감된 챌린지 일부는 1 · 2등 좋아요 수를 같게 맞춰서 "최다 추천 여러 개"가 나오게 해요
+    const submissionsByChallengeId = Map.groupBy(
+      submissions,
+      (s) => s.challengeId,
+    );
+    for (const [challengeId, list] of submissionsByChallengeId) {
+      if (!this.#isClosed(challengeId) || list.length < 2) continue;
+      if (!faker.datatype.boolean({ probability: 0.4 })) continue;
+
+      const [first, second] = [...list].sort(
+        (a, b) =>
+          likeCountBySubmissionId.get(b.id) - likeCountBySubmissionId.get(a.id),
+      );
+      likeCountBySubmissionId.set(
+        second.id,
+        likeCountBySubmissionId.get(first.id),
+      );
+    }
+
+    const data = submissions.flatMap((submission) =>
+      faker.helpers
+        .arrayElements(readers, likeCountBySubmissionId.get(submission.id))
+        .map((reader) =>
+          this.#makeSubmissionLikeInput(reader.id, submission.id),
+        ),
+    );
+
+    return await this.#insertInChunks('SubmissionLike', data, [
       'userId',
       'submissionId',
     ]);
@@ -228,27 +346,63 @@ export class Seeder {
     }
   }
 
-  #makeFeedbackInput(submissionId, authorId) {
+  #makeFeedbackInput(submission, authorId) {
+    const { title } = this.#sourceByChallengeId.get(submission.challengeId);
+
     return {
-      submissionId,
+      submissionId: submission.id,
       authorId,
-      content: faker.lorem.paragraph(6),
+      content: buildFeedback(title, faker),
     };
   }
 
-  async #seedFeedbacks(users, submissions) {
-    const data = submissions.flatMap((submission) =>
-      faker.helpers
-        .arrayElements(users, { min: 0, max: Math.min(2, users.length) })
-        .map((user) => this.#makeFeedbackInput(submission.id, user.id)),
-    );
+  // 피드백 개수는 좋아요가 많은 작업물일수록 많게 (0~15개, 화면에서는 3개씩 더 보기)
+  #pickFeedbackCount(likeCount) {
+    const count =
+      Math.round(likeCount / 25) + faker.number.int({ min: 0, max: 3 });
+    return Math.min(count, MAX_FEEDBACKS);
+  }
 
-    return await this.#insert('Feedback', data, ['id', 'submissionId']);
+  // 작성자는 메인 유저(작업물 작성자 제외)를 먼저 쓰고, 모자라면 독자 계정으로 채워요
+  async #seedFeedbacks({ users, readers, participations, submissions, likes }) {
+    const authorIdByParticipationId = new Map(
+      participations.map((p) => [p.id, p.userId]),
+    );
+    const likeCountBySubmissionId = new Map();
+    for (const like of likes) {
+      const count = likeCountBySubmissionId.get(like.submissionId) ?? 0;
+      likeCountBySubmissionId.set(like.submissionId, count + 1);
+    }
+
+    const data = submissions.flatMap((submission) => {
+      const count = this.#pickFeedbackCount(
+        likeCountBySubmissionId.get(submission.id) ?? 0,
+      );
+      const submissionAuthorId = authorIdByParticipationId.get(
+        submission.participationId,
+      );
+      const others = users.filter((u) => u.id !== submissionAuthorId);
+      const mainAuthors = faker.helpers.arrayElements(
+        others,
+        Math.min(count, others.length),
+      );
+      const readerAuthors = faker.helpers.arrayElements(
+        readers,
+        count - mainAuthors.length,
+      );
+
+      return [...mainAuthors, ...readerAuthors].map((author) =>
+        this.#makeFeedbackInput(submission, author.id),
+      );
+    });
+
+    return await this.#insertInChunks('Feedback', data, ['id', 'submissionId']);
   }
 
   #makeNotificationInput({
     recipientId,
     type,
+    title,
     challengeId = null,
     submissionId = null,
     feedbackId = null,
@@ -256,18 +410,18 @@ export class Seeder {
     return {
       recipientId,
       type,
-      message: faker.lorem.sentence(),
+      message: NOTIFICATION_MESSAGES[type](title),
       challengeId,
       submissionId,
       feedbackId,
     };
   }
 
+  // 실제 서비스가 만드는 알림 종류만 만들어요 (참여 · 좋아요 알림은 서비스에 없어서 제외)
   async #seedNotifications({
     challenges,
     participations,
     submissions,
-    likes,
     feedbacks,
   }) {
     const challengeById = new Map(challenges.map((c) => [c.id, c]));
@@ -279,48 +433,38 @@ export class Seeder {
       return participationById.get(submission.participationId).userId;
     };
 
-    const data = [
-      ...participations.map((p) =>
-        this.#makeNotificationInput({
-          recipientId: challengeById.get(p.challengeId).requestorId,
-          type: 'CHALLENGE_PARTICIPATION',
-          challengeId: p.challengeId,
-        }),
-      ),
+    const titleOf = (challengeId) => challengeById.get(challengeId).title;
 
+    const data = [
       ...submissions.map((s) =>
         this.#makeNotificationInput({
           recipientId: challengeById.get(s.challengeId).requestorId,
           type: 'SUBMISSION_RECEIVED',
+          title: titleOf(s.challengeId),
           challengeId: s.challengeId,
           submissionId: s.id,
         }),
       ),
 
-      ...likes.map((l) =>
-        this.#makeNotificationInput({
-          recipientId: authorIdOf(l.submissionId),
-          type: 'SUBMISSION_LIKED',
-          submissionId: l.submissionId,
-        }),
-      ),
-
-      ...feedbacks.map((f) =>
-        this.#makeNotificationInput({
+      ...feedbacks.map((f) => {
+        const { challengeId } = submissionById.get(f.submissionId);
+        return this.#makeNotificationInput({
           recipientId: authorIdOf(f.submissionId),
           type: 'FEEDBACK_RECEIVED',
+          title: titleOf(challengeId),
+          challengeId,
           submissionId: f.submissionId,
           feedbackId: f.id,
-        }),
-      ),
+        });
+      }),
 
-      //
       ...challenges
         .filter((c) => NOTIFICATION_TYPE_BY_STATUS[c.status])
         .map((c) =>
           this.#makeNotificationInput({
             recipientId: c.requestorId,
             type: NOTIFICATION_TYPE_BY_STATUS[c.status],
+            title: c.title,
             challengeId: c.id,
           }),
         ),
@@ -331,6 +475,7 @@ export class Seeder {
           this.#makeNotificationInput({
             recipientId: p.userId,
             type: 'CHALLENGE_CANCELED',
+            title: titleOf(p.challengeId),
             challengeId: p.challengeId,
           }),
         ),
@@ -346,7 +491,12 @@ export class Seeder {
       challengeId: challenge.id,
       adminId,
       action,
-      reason: action === 'APPROVE' ? null : faker.lorem.sentence(),
+      reason:
+        action === 'REJECT'
+          ? faker.helpers.arrayElement(REJECT_REASONS)
+          : action === 'CANCEL'
+            ? faker.helpers.arrayElement(CANCEL_REASONS)
+            : null,
     };
   }
 
@@ -426,6 +576,7 @@ export class Seeder {
     console.log('데이터 초기화');
 
     const users = await this.#seedUsers();
+    const readers = await this.#seedReaders();
     const admin = users.find((u) => u.role === 'ADMIN');
 
     const challenges = await this.#seedChallenges(users);
@@ -434,15 +585,20 @@ export class Seeder {
     const submissions = await this.#seedSubmissions(participations);
     await this.#seedSubmissionDrafts(participations);
 
-    const likes = await this.#seedSubmissionLikes(users, submissions);
-    const feedbacks = await this.#seedFeedbacks(users, submissions);
+    const likes = await this.#seedSubmissionLikes(readers, submissions);
+    const feedbacks = await this.#seedFeedbacks({
+      users,
+      readers,
+      participations,
+      submissions,
+      likes,
+    });
     await this.#seedSelections(challenges, submissions, likes);
 
     await this.#seedNotifications({
       challenges,
       participations,
       submissions,
-      likes,
       feedbacks,
     });
     await this.#seedModerationLogs(admin, challenges);
@@ -455,7 +611,7 @@ const db = postgres({
   url: process.env.DATABASE_URL,
 });
 
-const seeder = new Seeder(db, 10);
+const seeder = new Seeder(db, USER_COUNT);
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seeder
