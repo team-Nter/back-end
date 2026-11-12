@@ -78,6 +78,7 @@ export const submissionPaths = {
       requestParams: { path: submissionParamsSchema },
       requestBody: body(updateSubmissionSchema, {
         examples: EXAMPLES.updateSubmission,
+        requireAnyOf: ['title', 'content'],
       }),
       responses: {
         200: json('수정 성공', submissionResponseSchema),
@@ -165,6 +166,7 @@ export const submissionPaths = {
       requestParams: { path: challengeIdParamSchema },
       requestBody: body(submissionDraftSchema, {
         examples: EXAMPLES.saveDraft,
+        requireAnyOf: ['title', 'content'],
       }),
       responses: {
         200: json('저장 성공', submissionDraftResponseSchema),

@@ -13,31 +13,41 @@ export const noContent = (description = '성공 (응답 본문 없음)') => ({
   description,
 });
 
-/**
- * DTO 스키마는 그대로 두고, 문서에 표시할 필드별 예시 값만 덧붙입니다.
- * @example withExamples(loginSchema, { email: 'docthru@example.com' })
- */
-export const withExamples = (schema, examples) =>
-  schema.meta({
+export const documented = (schema, { examples, requireAnyOf } = {}) => {
+  if (!examples && !requireAnyOf) return schema;
+
+  // .meta()를 여러 번 부르면 override가 덮어써지므로 한 번에 처리합니다.
+  return schema.meta({
     override: ({ jsonSchema }) => {
-      for (const [key, example] of Object.entries(examples)) {
+      for (const [key, example] of Object.entries(examples ?? {})) {
         if (jsonSchema.properties?.[key]) {
           jsonSchema.properties[key].example = example;
         }
       }
+
+      if (requireAnyOf) {
+        jsonSchema.anyOf = requireAnyOf.map((key) => ({
+          required: [key],
+          properties: { [key]: { pattern: '\\S' } },
+        }));
+      }
     },
   });
+};
 
 // form 형식을 먼저 두면 Swagger UI가 필드별 입력칸을 기본으로 보여줍니다.
 // examples를 넘기면 입력칸에 예시 값이 채워집니다.
-export const body = (schema, { required = true, examples } = {}) => {
-  const documented = examples ? withExamples(schema, examples) : schema;
+export const body = (
+  schema,
+  { required = true, examples, requireAnyOf } = {},
+) => {
+  const schemaForDocs = documented(schema, { examples, requireAnyOf });
 
   return {
     required,
     content: {
-      'application/x-www-form-urlencoded': { schema: documented },
-      'application/json': { schema: documented },
+      'application/x-www-form-urlencoded': { schema: schemaForDocs },
+      'application/json': { schema: schemaForDocs },
     },
   };
 };

@@ -1,5 +1,6 @@
 import {
   createFeedbackSchema,
+  deleteFeedbackSchema,
   feedbackParamsSchema,
 } from '../../controllers/feedback/dto/feedback.dto.js';
 import { submissionParamsSchema } from '../../controllers/submission/dto/submission.dto.js';
@@ -67,6 +68,12 @@ export const feedbackPaths = {
       description: '작성자 본인 또는 관리자만 삭제할 수 있습니다.',
       security: AUTH,
       requestParams: { path: feedbackParamsSchema },
+      requestBody: {
+        required: false,
+        content: {
+          'application/json': { schema: deleteFeedbackSchema.unwrap() },
+        },
+      },
       responses: {
         204: noContent('삭제 성공'),
         ...errors(400, 401, {
