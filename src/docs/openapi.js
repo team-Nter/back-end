@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
+import { config, isProduction } from '#config';
 import { json } from './helpers.js';
 import { authPaths } from './paths/auth.paths.js';
 import { challengePaths } from './paths/challenge.paths.js';
@@ -46,7 +47,13 @@ export const openApiDocument = createDocument({
       '**에러 응답**: 모든 에러는 `{ "success": false, "message": "..." }` 형태입니다.',
     ].join('\n'),
   },
-  servers: [{ url: '/', description: '현재 서버' }],
+
+  servers: [
+    {
+      url: config.API_BASE_URL.replace(/\/+$/, ''),
+      description: isProduction ? '배포 서버' : '로컬 서버',
+    },
+  ],
   tags: [
     { name: '인증' },
     { name: '사용자' },
