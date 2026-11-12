@@ -14,6 +14,7 @@ const envSchema = z.object({
   CLIENT_BASE_URL: z.string().optional().default('http://localhost:3000'),
   GOOGLE_CLIENT_ID: z.string().trim().min(1),
   GOOGLE_CLIENT_SECRET: z.string().trim().min(1),
+  OAUTH_REDIRECT_BASE_URL: z.url(),
 });
 
 const parseEnvironment = () => {
@@ -30,6 +31,7 @@ const parseEnvironment = () => {
       CLIENT_BASE_URL: process.env.CLIENT_BASE_URL,
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+      OAUTH_REDIRECT_BASE_URL: process.env.OAUTH_REDIRECT_BASE_URL,
     });
 
     return {
