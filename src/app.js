@@ -1,6 +1,8 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 import { errorHandler, cors } from '#middlewares';
+import { openApiDocument } from './docs/openapi.js';
 
 export class App {
   #config;
@@ -15,6 +17,7 @@ export class App {
 
   middleware(authMiddleware) {
     this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: false }));
     this.app.use(cookieParser());
     this.app.use(cors);
     this.app.use((req, res, next) =>
@@ -23,6 +26,23 @@ export class App {
   }
 
   routes(controller) {
+    this.app.get('/docs/openapi.json', (_req, res) =>
+      res.json(openApiDocument),
+    );
+    this.app.use(
+      '/docs',
+      swaggerUi.serve,
+      swaggerUi.setup(openApiDocument, {
+        customSiteTitle: '독스루 API 문서',
+        // 쿠키 인증은 Authorize 버튼으로 설정할 수 없어 숨깁니다.
+        // 자물쇠 아이콘은 "로그인 필요" 표시로만 남기고 클릭은 막습니다.
+        customCss: [
+          '.swagger-ui .scheme-container .auth-wrapper { display: none }',
+          '.swagger-ui .authorization__btn { pointer-events: none }',
+        ].join('\n'),
+      }),
+    );
+
     this.app.use('/', controller.routes());
   }
 
@@ -40,6 +60,7 @@ export class App {
         console.log(
           `[${this.#config.NODE_ENV}] Server running at http://localhost:${port}`,
         );
+        console.log(`API 문서 : http://localhost:${port}/docs`);
         resolve(server);
       });
     });
