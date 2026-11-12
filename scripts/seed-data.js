@@ -1044,13 +1044,16 @@ export function buildSubmissionContent(
     const template = sentences[sentenceIndex % sentences.length];
     sentenceIndex += 1;
     const lead = faker.helpers.arrayElement(SENTENCE_LEADS);
-    return lead + fill(template, topic, faker.helpers.arrayElement(terms));
+    // 제목에 '<dialog> 요소'처럼 태그 모양이 있어서, HTML로 해석되지 않게 이스케이프해요
+    return escapeHtml(
+      lead + fill(template, topic, faker.helpers.arrayElement(terms)),
+    );
   };
 
   const nextListItem = () => {
     const template = listItems[listIndex % listItems.length];
     listIndex += 1;
-    return fill(template, topic, faker.helpers.arrayElement(terms));
+    return escapeHtml(fill(template, topic, faker.helpers.arrayElement(terms)));
   };
 
   const html = [];
