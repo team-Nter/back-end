@@ -22,7 +22,6 @@ export class SubmissionController extends BaseController {
   routes() {
     this.router.get(
       '/:submissionId',
-      this.#authz.requireAuth,
       validate('params', submissionParamsSchema),
       (req, res) => this.getSubmission(req, res),
     );
@@ -65,7 +64,8 @@ export class SubmissionController extends BaseController {
 
   async getSubmission(req, res) {
     const { submissionId } = req.params;
-    const userId = req.user.id;
+    // 비로그인도 조회할 수 있습니다. 이때 isLiked는 항상 false입니다.
+    const userId = req.user?.id ?? null;
 
     const submission = await this.#submissionService.getSubmission(
       submissionId,
