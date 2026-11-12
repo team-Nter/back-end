@@ -55,11 +55,12 @@ export class SubmissionService {
       throw new NotFoundException('작업물을 찾을 수 없습니다');
     }
 
-    const like =
-      await this.#submissionLikeRepository.findByUserIdAndSubmissionId(
-        userId,
-        submissionId,
-      );
+    const like = userId
+      ? await this.#submissionLikeRepository.findByUserIdAndSubmissionId(
+          userId,
+          submissionId,
+        )
+      : null;
 
     const { likes, feedbacks, participation, ...rest } = submission;
     const user = participation.user;
